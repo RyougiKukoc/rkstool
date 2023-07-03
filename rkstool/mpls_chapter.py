@@ -1,3 +1,4 @@
+# Stolen from YomikoR
 from typing import Dict, Set, List, Optional, Type
 import io
 import os

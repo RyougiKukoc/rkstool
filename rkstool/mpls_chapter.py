@@ -1,11 +1,12 @@
 # Stolen from YomikoR
-from typing import Dict, Set, List, Optional, Type
+from typing import Dict, Set, List, Optional
 import io
 import os
 import re
 from struct import unpack
 from functools import partial
 from math import ceil, floor
+import logging
 
 
 __all__ = [
@@ -220,7 +221,29 @@ def parse_mpls(mpls: str, streams: Dict[str, StreamInfo]) -> None:
             fskip(6)
 
 
-def read_mpls(bd_dir: str, output_dir: Optional[str] = None, min_length: int = 0):
+def get_logger(log_fp: str, logger_name: str = 'inspector'):
+    import logging
+
+    logger = logging.getLogger(logger_name)
+    sh = logging.StreamHandler()
+    fh = logging.FileHandler(log_fp, mode='a')
+    fmt = logging.Formatter('%(asctime)s %(levelname)s: %(message)s')
+    logger.setLevel(logging.INFO)
+    sh.setLevel(logging.INFO)
+    fh.setLevel(logging.INFO)
+    sh.setFormatter(fmt)
+    fh.setFormatter(fmt)
+    logger.addHandler(sh)
+    logger.addHandler(fh)
+    return logger
+
+
+def read_mpls(
+        bd_dir: str, 
+        output_dir: Optional[str] = None, 
+        min_length: int = 0, 
+        logger_fp: str = None, 
+):
     bd_dir = os.path.abspath(bd_dir)
     if os.path.isfile(bd_dir):
         if os.path.splitext(bd_dir)[1] in ('.m2ts', '.mpls'):
@@ -230,6 +253,10 @@ def read_mpls(bd_dir: str, output_dir: Optional[str] = None, min_length: int = 0
     mpls_dir = os.path.join(bd_dir, 'BDMV', 'PLAYLIST')
     if not os.path.isdir(mpls_dir):
         raise ValueError('Input dir is not valid.')
+    if logger_fp is None:
+        logger_fp = bd_dir + '.log'
+    logger = get_logger(logger_fp)
+
     # Init stream dict info
     streams: Dict[str, StreamInfo] = dict()
     # Parse each MPLS
@@ -237,6 +264,7 @@ def read_mpls(bd_dir: str, output_dir: Optional[str] = None, min_length: int = 0
     for mpls in os.listdir(mpls_dir):
         if p.match(mpls):
             parse_mpls(os.path.join(mpls_dir, mpls), streams)
+
     # Prepare
     exclude_list = []
     for idx_str, stream in streams.items():
@@ -244,9 +272,10 @@ def read_mpls(bd_dir: str, output_dir: Optional[str] = None, min_length: int = 0
             exclude_list.append(idx_str)
     for idx_str in exclude_list:
         del streams[idx_str]
+
     # Output
     if len(streams.keys()) < 1:
-        print('No chapter found')
+        logger.info('No chapter found')
     else:
         if output_dir is None:
             output_dir = os.path.join(bd_dir, 'BDMV', 'STREAM')
@@ -273,4 +302,4 @@ def read_mpls(bd_dir: str, output_dir: Optional[str] = None, min_length: int = 0
                 with open(os.path.join(output_dir, idx_str + '.60.qpfile'), 'w') as outf:
                     outf.write(stream.gen_qpfile(frame_rate=BD_FrameRate[7]))
             info_str = info_str + idx_str + ' '
-        print(info_str)
+        logger.info(info_str)

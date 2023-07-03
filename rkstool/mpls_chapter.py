@@ -237,10 +237,10 @@ def get_logger(log_fp: str, logger_name: str = 'inspector'):
 
 
 def read_mpls(
-        bd_dir: str, 
-        output_dir: Optional[str] = None, 
-        min_length: int = 0, 
-        logger_fp: str = None, 
+    bd_dir: str, 
+    output_dir: Optional[str] = None, 
+    min_length: int = 0, 
+    logger_fp: str = None, 
 ):
     bd_dir = os.path.abspath(bd_dir)
     if os.path.isfile(bd_dir):

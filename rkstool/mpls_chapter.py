@@ -222,8 +222,6 @@ def parse_mpls(mpls: str, streams: Dict[str, StreamInfo]) -> None:
 
 
 def get_logger(log_fp: str, logger_name: str = 'inspector'):
-    import logging
-
     logger = logging.getLogger(logger_name)
     sh = logging.StreamHandler()
     fh = logging.FileHandler(log_fp, mode='a')

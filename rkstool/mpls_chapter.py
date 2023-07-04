@@ -226,6 +226,7 @@ def read_mpls(
     output_dir: Optional[str] = None, 
     min_length: int = 0, 
     logger_fp: str = None, 
+    logger = None,
 ):
     bd_dir = os.path.abspath(bd_dir)
     if os.path.isfile(bd_dir):
@@ -238,7 +239,8 @@ def read_mpls(
         raise ValueError('Input dir is not valid.')
     if logger_fp is None:
         logger_fp = bd_dir + '.log'
-    logger = get_logger(logger_fp)
+    if logger is None:
+        logger = get_logger(logger_fp)
 
     # Init stream dict info
     streams: Dict[str, StreamInfo] = dict()

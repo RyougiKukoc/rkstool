@@ -6,7 +6,7 @@ import re
 from struct import unpack
 from functools import partial
 from math import ceil, floor
-import logging
+from .logger import get_logger
 
 
 __all__ = [
@@ -219,21 +219,6 @@ def parse_mpls(mpls: str, streams: Dict[str, StreamInfo]) -> None:
             TimeStamp = fget(4)
             mpls_streams[PlayItemID].timestamps.add(TimeStamp)
             fskip(6)
-
-
-def get_logger(log_fp: str, logger_name: str = 'inspector'):
-    logger = logging.getLogger(logger_name)
-    sh = logging.StreamHandler()
-    fh = logging.FileHandler(log_fp, mode='a')
-    fmt = logging.Formatter('%(asctime)s %(levelname)s: %(message)s')
-    logger.setLevel(logging.INFO)
-    sh.setLevel(logging.INFO)
-    fh.setLevel(logging.INFO)
-    sh.setFormatter(fmt)
-    fh.setFormatter(fmt)
-    logger.addHandler(sh)
-    logger.addHandler(fh)
-    return logger
 
 
 def read_mpls(

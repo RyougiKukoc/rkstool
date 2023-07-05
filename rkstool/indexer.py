@@ -10,9 +10,9 @@ from .logger import get_logger
 def index(workspace_fp: str, logger_fp: str = None, ffprobe_fp: str = None):
     workspace_fp = os.path.abspath(workspace_fp)
     if os.path.exists(os.path.join(workspace_fp, 'BDMV', 'STREAM')):  # single volume optim
-        id = 1
+        bdid = 1
         while True:
-            new_dir = os.path.join(workspace_fp, f'BD{id}')
+            new_dir = os.path.join(workspace_fp, f'BD{bdid}')
             if not os.path.exists(new_dir):
                 ld = os.listdir(workspace_fp)
                 os.makedirs(new_dir)
@@ -20,7 +20,7 @@ def index(workspace_fp: str, logger_fp: str = None, ffprobe_fp: str = None):
                     shutil.move(os.path.join(workspace_fp, fd), new_dir)
                 break
             else:
-                id += 1
+                bdid += 1
     if logger_fp is None:
         logger_fn = datetime.datetime.now().strftime(r'%Y%m%d-%H%M%S') + '.indexer.log'
         logger_fp = os.path.join(workspace_fp, logger_fn)

@@ -1,5 +1,5 @@
 # rkstool
-Ryougi Kukoc's python-rewrite Magic-Raws' toolchain
+Ryougi Kukoc's python-rewrite Magic-Raws' toolchain. The framework was originally constructed by mein Führer Alice.
 
 # Original Toolchain GUIDELINE
 ## 1. "ks_0link&更改权限.exe"

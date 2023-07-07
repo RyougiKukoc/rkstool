@@ -30,9 +30,11 @@ def index(workspace_fp: str, logger_fp: str = None, ffmpeg_fp: str = None):
     for bd in os.listdir(workspace_fp):
         tar_fp = os.path.join(workspace_fp, bd)
         if os.path.isdir(tar_fp):
+            stream_fp = os.path.join(tar_fp, 'BDMV', 'STREAM')
+            if not os.path.exists(stream_fp):
+                continue
             logger.info(f'Generating qpfiles for {bd} ...')
             read_mpls(tar_fp, logger=logger)
-            stream_fp = os.path.join(tar_fp, 'BDMV', 'STREAM')
             for m2ts in os.listdir(stream_fp):
                 if m2ts.endswith('.m2ts'):
                     logger.info(f'Decoding {bd}///{m2ts} ...')

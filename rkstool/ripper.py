@@ -27,8 +27,7 @@ def dfs(
                     run_name=run_name,
                     logger=logger,
                 )
-            else:
-                continue
+            continue
         name, ext = os.path.splitext(fn)
         if ext not in accept_ext:
             continue

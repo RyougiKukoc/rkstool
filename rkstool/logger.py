@@ -1,7 +1,7 @@
 import logging
 
 
-def get_logger(log_fp: str, logger_name: str = 'inspector'):
+def get_logger(log_fp: str, logger_name: str = 'inspector') -> logging.Logger:
     logger = logging.getLogger(logger_name)
     sh = logging.StreamHandler()
     fh = logging.FileHandler(log_fp, mode='a')
@@ -14,3 +14,6 @@ def get_logger(log_fp: str, logger_name: str = 'inspector'):
     logger.addHandler(sh)
     logger.addHandler(fh)
     return logger
+
+
+Logger = logging.Logger

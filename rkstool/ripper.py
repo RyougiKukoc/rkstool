@@ -39,6 +39,8 @@ def dfs(
         break_fp = vc_fp + '.break'
         if os.path.exists(vc_fp) and not os.path.exists(break_fp):
             continue
+        if os.path.exists(busy_fp):  # spj for multiple tasks
+            continue
         with open(busy_fp, 'w') as busyf:
             busyf.write(f'{vc_fp} is being encoded.')
         runpy.run_path(rpy_fp, run_name=run_name)
@@ -101,3 +103,19 @@ def rip(
             logger=logger,
         )
     logger.info('Done.')
+
+
+def ripbusy(
+    rip_path: str,
+    recursion: bool = True, 
+    vc_ext: str = '.hevc',
+    run_ext: str = '.py', 
+    accept_ext: list = ['.m2ts'],
+    run_name: str = '__main__',
+    logger = None, 
+    logger_fp: str = None,
+    num_redo: int = 1,
+):
+    """
+    for safety, re-encode those marked with .busy but interrupted
+    """

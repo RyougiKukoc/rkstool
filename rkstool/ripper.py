@@ -40,7 +40,7 @@ def dfs(
         if os.path.exists(vc_fp) and not os.path.exists(break_fp):
             continue
         with open(busy_fp, 'w') as busyf:
-            busyf.writable(f'{vc_fp} is being encoded.')
+            busyf.write(f'{vc_fp} is being encoded.')
         runpy.run_path(rpy_fp, run_name=run_name)
         if os.path.exists(busy_fp):
             os.remove(busy_fp)

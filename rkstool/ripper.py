@@ -13,6 +13,7 @@ def dfs(
     accept_ext: list = ['.m2ts'],
     run_name: str = '__main__',
     logger: Logger = None, 
+    multi_task: bool = False,
 ):
     for fn in os.listdir(rip_path):
         tar_fp = os.path.join(rip_path, fn)
@@ -39,7 +40,7 @@ def dfs(
         break_fp = vc_fp + '.break'
         if os.path.exists(vc_fp) and not os.path.exists(break_fp):
             continue
-        if os.path.exists(busy_fp):  # spj for multiple tasks
+        if os.path.exists(busy_fp) and multi_task:  # spj for multiple tasks
             continue
         with open(busy_fp, 'w') as busyf:
             busyf.write(f'{vc_fp} is being encoded.')
@@ -72,6 +73,7 @@ def rip(
     logger = None, 
     logger_fp: str = None,
     num_redo: int = 1,
+    multi_task: bool = False,
 ):
     assert type(num_redo) == int
     rip_path = os.path.abspath(rip_path)
@@ -88,6 +90,7 @@ def rip(
         accept_ext=accept_ext,
         run_name=run_name,
         logger=logger,
+        multi_task=multi_task,
     )
     while num_redo > 0:
         num_redo -= 1
@@ -103,19 +106,3 @@ def rip(
             logger=logger,
         )
     logger.info('Done.')
-
-
-def ripbusy(
-    rip_path: str,
-    recursion: bool = True, 
-    vc_ext: str = '.hevc',
-    run_ext: str = '.py', 
-    accept_ext: list = ['.m2ts'],
-    run_name: str = '__main__',
-    logger = None, 
-    logger_fp: str = None,
-    num_redo: int = 1,
-):
-    """
-    for safety, re-encode those marked with .busy but interrupted
-    """

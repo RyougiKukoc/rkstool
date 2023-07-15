@@ -6,16 +6,15 @@ def make_qpfile(
     dir: str, 
     qp_ext: str = '.24.qpfile', 
     force: bool = False,  # whether to cover existed '*.qpfile'
-    accept_ext = ['.m2ts']
 ):
     dir = os.path.abspath(dir)
     for fn in os.listdir(dir):
         fp = os.path.join(dir, fn)
         if os.path.isdir(fp):
-            make_qpfile(fp)
+            make_qpfile(fp, qp_ext, force)
             continue
         name, ext = os.path.splitext(fn)
-        if ext not in accept_ext:
+        if ext not in ['.m2ts']:
             continue
         waste_dir = os.path.join(dir, 'waste_qp')
         tar_qp_fp = os.path.join(dir, name + qp_ext)

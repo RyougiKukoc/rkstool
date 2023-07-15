@@ -3,7 +3,7 @@ import glob
 import shutil
 
 
-def simplesort(tosort_fp: str, acceptext: list = ['.m2ts']):
+def simple_sort(tosort_fp: str, acceptext: list = ['.m2ts']):
     tosort_fp = os.path.abspath(tosort_fp)
     for fn in os.listdir(tosort_fp):
         target_fp = os.path.join(tosort_fp, fn)

@@ -2,7 +2,7 @@ import os
 import glob
 
 
-def mapconfig(
+def map_config(
     config_fp: str, 
     config_ext = '.vpy', 
     replace: bool = False, 

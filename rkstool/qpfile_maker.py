@@ -2,7 +2,7 @@ import os
 import shutil
 
 
-def addqpfile(
+def make_qpfile(
     dir: str, 
     qp_ext: str = '.24.qpfile', 
     force: bool = True,  # whether to cover existed '*.qpfile'
@@ -12,7 +12,7 @@ def addqpfile(
     for fn in os.listdir(dir):
         fp = os.path.join(dir, fn)
         if os.path.isdir(fp):
-            addqpfile(fp)
+            make_qpfile(fp)
             continue
         name, ext = os.path.splitext(fn)
         if ext not in accept_ext:

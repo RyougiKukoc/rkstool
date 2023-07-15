@@ -20,7 +20,7 @@
 
 压制部分，考虑到一些人的多开压制需求，同时支持多开模式和检查模式：一个视频文件在压制时会产生一个 `.busy` 标记，多开模式下碰到该标记自动跳过，检查模式下碰到该标记则覆盖重压。每个视频压完后，利用 vapoursynth 检查压制后的视频与源是否帧数相同，不同则被认为断压，产生一个 `.break` 标记。工具链提供一个“重压次数”参数，允许在次数范围内检查标记并重压。
 
-对于 BDRip 来说，压制完成后就可以进行抽混流了。由于一些原因，我用 [tsmuxer](https://github.com/justdan96/tsMuxer) 获取流信息、用 [eac3to](https://forum.doom9.org/showthread.php?t=125966) 实际执行抽取。由于有些制作商会在各种情况下复制凑数音轨，抽取完成后需要检查并将冗余音轨抛弃，这里使用 [librosa](https://librosa.org/) 库实现检查。抽流完成后，利用 `qpfile`` 和视频文件产生 PTS 对齐后的章节。最后使用 [mkvmerge](https://mkvtoolnix.download/) 封装。
+对于 BDRip 来说，压制完成后就可以进行抽混流了。由于一些原因，我用 [tsmuxer](https://github.com/justdan96/tsMuxer) 获取流信息、用 [eac3to](https://forum.doom9.org/showthread.php?t=125966) 实际执行抽取。由于有些制作商会在各种情况下复制凑数音轨，抽取完成后需要检查并将冗余音轨抛弃，这里使用 [librosa](https://librosa.org/) 库实现检查。抽流完成后，利用 `qpfile` 和视频文件产生 PTS 对齐后的章节。最后使用 [mkvmerge](https://mkvtoolnix.download/) 封装。
 
 # Original Toolchain GUIDELINE
 ## 1. "ks_0link&更改权限.exe"

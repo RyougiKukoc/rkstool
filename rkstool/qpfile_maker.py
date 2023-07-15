@@ -5,7 +5,7 @@ import shutil
 def make_qpfile(
     dir: str, 
     qp_ext: str = '.24.qpfile', 
-    force: bool = True,  # whether to cover existed '*.qpfile'
+    force: bool = False,  # whether to cover existed '*.qpfile'
     accept_ext = ['.m2ts']
 ):
     dir = os.path.abspath(dir)

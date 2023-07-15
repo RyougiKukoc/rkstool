@@ -1,6 +1,8 @@
 # rkstool
 ***The framework was originally constructed by mein Führer Alice.***
 
+**Special Thanks to Jan, x_x.**
+
 ## 设计构想
 首先，为了辅种方便和误操作后能够重开，需要对整个原种做硬链接；***提示：你不能在 FAT 格式的分区上做硬链接，推荐在 NTFS 分区上完成工作。***
 

@@ -76,11 +76,11 @@ def dfs(
         eac3to_cmd = [_eac3to_fp, tar_fp]
         for id, track in enumerate(media, 1):
             if track == 'a':
-                aud_fp = os.path.join(mux_path, f'_mux_{id}a.flac')
-                eac3to_cmd += [f'{id}:', aud_fp]
+                # aud_fp = os.path.join(mux_path, f'_mux_{id}a.flac')
+                eac3to_cmd += [f'{id}:', f'_mux_{id}a.flac']
             elif track == 's':
-                sub_fp = os.path.join(mux_path, f'_mux_{id}s.sup')
-                eac3to_cmd += [f'{id}:', sub_fp]
+                # sub_fp = os.path.join(mux_path, f'_mux_{id}s.sup')
+                eac3to_cmd += [f'{id}:', f'_mux_{id}s.sup']
                 to_merge_sub += [sub_fp]
         eac3to_cmd += ['-log=NUL']
         p = sp.Popen(eac3to_cmd)
@@ -89,7 +89,8 @@ def dfs(
         # check audio dupe
         for id, track in enumerate(media, 1):
             if track == 'a':
-                aud_fp = os.path.join(mux_path, f'_mux_{id}a.flac')
+                # aud_fp = os.path.join(mux_path, f'_mux_{id}a.flac')
+                aud_fp = f'_mux_{id}a.flac'
                 if len(to_merge_aud) == 0:
                     to_merge_aud += [aud_fp]
                     last_aud = load_audio(aud_fp)
@@ -127,11 +128,11 @@ def dfs(
 
         for id, track in enumerate(media, 1):
             if track == 'a':
-                aud_fp = os.path.join(mux_path, f'_mux_{id}a.flac')
-                os.remove(aud_fp)
+                # aud_fp = os.path.join(mux_path, f'_mux_{id}a.flac')
+                os.remove(f'_mux_{id}a.flac')
             elif track == 's':
-                sub_fp = os.path.join(mux_path, f'_mux_{id}s.sup')
-                os.remove(sub_fp)
+                # sub_fp = os.path.join(mux_path, f'_mux_{id}s.sup')
+                os.remove(f'_mux_{id}s.sup')
 
 
 def mux_bd(

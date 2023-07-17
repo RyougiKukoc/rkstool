@@ -23,6 +23,7 @@ def dfs(
 ):
     enc = encdict[vc_ext]
     mux_path = os.path.abspath(mux_path)
+    os.chdir(mux_path)  # len(path) problem in eac3to
     for fn in os.listdir(mux_path):
         tar_fp = os.path.join(mux_path, fn)
         if os.path.isdir(tar_fp):
@@ -73,7 +74,7 @@ def dfs(
         # use eac3to to 
         to_merge_sub = []
         to_merge_aud = []
-        eac3to_cmd = [_eac3to_fp, tar_fp]
+        eac3to_cmd = [_eac3to_fp, fn]
         for id, track in enumerate(media, 1):
             if track == 'a':
                 # aud_fp = os.path.join(mux_path, f'_mux_{id}a.flac')
@@ -81,7 +82,7 @@ def dfs(
             elif track == 's':
                 # sub_fp = os.path.join(mux_path, f'_mux_{id}s.sup')
                 eac3to_cmd += [f'{id}:', f'_mux_{id}s.sup']
-                to_merge_sub += [sub_fp]
+                to_merge_sub += [f'_mux_{id}s.sup']
         eac3to_cmd += ['-log=NUL']
         p = sp.Popen(eac3to_cmd)
         r = p.communicate()
@@ -103,7 +104,7 @@ def dfs(
                 last_aud = this_aud
 
         # generate pts chapter from qpfile
-        w, h =  GCFQP(vc_fp, qp_fp, chap_fp, mux_path, _ffprobe_fp, _mkvmerge_fp)
+        w, h =  GCFQP(vc_fp, qp_fp, chap_fp, _ffprobe_fp, _mkvmerge_fp)
 
         mkv_fp = os.path.join(mux_path, name + f' (BD {w}x{h} {enc}')
         num_a = len(to_merge_aud)

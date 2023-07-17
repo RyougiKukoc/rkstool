@@ -7,13 +7,15 @@ def GCFQP(
     vcfile: str, 
     qpfile: str,
     output_chapter: str,
-    tmp_fp: str,
+    # tmp_fp: str,
     ffprobe_fp: str, 
     mkvmerge_fp: str, 
 ):
-    tmp_fp = os.path.abspath(tmp_fp)
-    tmp_mkv_fp = os.path.join(tmp_fp, 'tmp.mkv')
-    tmp_xml_fp = os.path.join(tmp_fp, 'tmp.xml')
+    # tmp_fp = os.path.abspath(tmp_fp)
+    # tmp_mkv_fp = os.path.join(tmp_fp, 'tmp.mkv')
+    # tmp_xml_fp = os.path.join(tmp_fp, 'tmp.xml')
+    tmp_mkv_fp = '_GCFQP_tmp.mkv'
+    tmp_xml_fp = '_GCFQP_tmp.xml'
     p = sp.Popen([mkvmerge_fp, '-o', tmp_mkv_fp, vcfile])
     r = p.communicate()
     with open(tmp_xml_fp, 'w') as xmlf:

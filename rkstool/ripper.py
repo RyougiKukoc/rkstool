@@ -15,6 +15,7 @@ def dfs(
     logger: Logger = None, 
     multi_task: bool = False,
 ):
+    os.chdir(rip_path)
     for fn in os.listdir(rip_path):
         tar_fp = os.path.join(rip_path, fn)
         if os.path.isdir(tar_fp):

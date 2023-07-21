@@ -6,7 +6,7 @@ from .mpls_chapter import read_mpls
 from .logger import get_logger
 
 
-def index(workspace_fp: str, logger_fp: str = None, ffmpeg_fp: str = None):
+def index(workspace_fp: str, logger_fp: str = None, ffmpeg_fp: str = None, qponly: bool = False):
     workspace_fp = os.path.abspath(workspace_fp)
     if os.path.exists(os.path.join(workspace_fp, 'BDMV', 'STREAM')):  # single volume optim
         bdid = 1
@@ -35,6 +35,8 @@ def index(workspace_fp: str, logger_fp: str = None, ffmpeg_fp: str = None):
                 continue
             logger.info(f'Generating qpfiles for {bd} ...')
             read_mpls(tar_fp, logger=logger)
+            if qponly:
+                continue
             for m2ts in os.listdir(stream_fp):
                 if m2ts.endswith('.m2ts'):
                     logger.info(f'Decoding {bd}///{m2ts} ...')

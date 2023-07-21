@@ -23,7 +23,6 @@ def dfs(
 ):
     enc = encdict[vc_ext]
     mux_path = os.path.abspath(mux_path)
-    os.chdir(mux_path)  # len(path) problem in eac3to
     for fn in os.listdir(mux_path):
         tar_fp = os.path.join(mux_path, fn)
         if os.path.isdir(tar_fp):
@@ -34,6 +33,7 @@ def dfs(
                     vc_ext=vc_ext,
                 )
             continue
+        os.chdir(mux_path)  # len(path) problem in eac3to
         name, ext = os.path.splitext(fn)
         vc_fp = os.path.join(mux_path, name + vc_ext)
         qp_fp = os.path.join(mux_path, name + '.qpfile')

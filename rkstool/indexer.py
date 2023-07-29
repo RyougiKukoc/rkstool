@@ -46,6 +46,7 @@ def index(workspace_fp: str, logger_fp: str = None, ffmpeg_fp: str = None, qponl
                          '-i', mfp, 
                          '-v', 'error', 
                          '-f', 'yuv4mpegpipe', 
+                         '-strict', '-1', 
                          '-'], 
                         stdout=sp.DEVNULL,
                         stderr=sp.PIPE,

@@ -31,7 +31,10 @@ def index(workspace_fp: str, logger_fp: str = None, ffmpeg_fp: str = None, qponl
         tar_fp = os.path.join(workspace_fp, bd)
         if os.path.isdir(tar_fp):
             stream_fp = os.path.join(tar_fp, 'BDMV', 'STREAM')
+            donemark = os.path.join(stream_fp, 'index.done')
             if not os.path.exists(stream_fp):
+                continue
+            if os.path.exists(donemark):
                 continue
             logger.info(f'Generating qpfiles for {bd} ...')
             read_mpls(tar_fp, logger=logger)
@@ -40,6 +43,7 @@ def index(workspace_fp: str, logger_fp: str = None, ffmpeg_fp: str = None, qponl
             for m2ts in os.listdir(stream_fp):
                 if m2ts.endswith('.m2ts'):
                     logger.info(f'Decoding {bd}///{m2ts} ...')
+                    err_fp = os.path.join(stream_fp, m2ts + '.vserr')
                     mfp = os.path.join(stream_fp, m2ts)
                     p = sp.Popen(
                         [ffmpeg_fp, 
@@ -53,10 +57,12 @@ def index(workspace_fp: str, logger_fp: str = None, ffmpeg_fp: str = None, qponl
                     )
                     err = p.communicate()[1].decode()
                     if len(err) > 0:
-                        with open(os.path.join(stream_fp, m2ts + '.vserr'), 'w') as ef:
+                        with open(err_fp, 'w') as ef:
                             ef.write(err)
                         logger.info(f'Error occurs when decoding {bd}///{m2ts}:')
                         logger.info(err)
                     else:
+                        if os.path.exists(err_fp):
+                            os.remove(err_fp)
                         logger.info(f'{bd}///{m2ts} decoded successfully!\n')
                             

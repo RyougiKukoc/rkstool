@@ -16,7 +16,7 @@ def map_config(
     dir_fp = os.path.dirname(config_fp)
     target_list = []
     for ext in accept_ext:
-        target_list += glob.glob(os.path.join(dir_fp, '*' + ext))
+        target_list += glob.glob(os.path.join(glob.escape(dir_fp), '*' + ext))
     
     for target_fp in target_list:
         target_fn = os.path.basename(target_fp)

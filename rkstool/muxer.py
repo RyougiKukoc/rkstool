@@ -48,7 +48,7 @@ def dfs(
             continue
         if os.path.exists(busy_fp):
             continue
-        if len(glob.glob(os.path.join(mux_path, name + '*.mkv'))) > 0:
+        if len(glob.glob(os.path.join(glob.escape(mux_path), name + '*.mkv'))) > 0:
             continue
         
         # use tsmuxer to fetch stream info

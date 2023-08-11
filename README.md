@@ -22,6 +22,35 @@
 
 对于 BDRip 来说，压制完成后就可以进行抽混流了。由于一些原因，我用 [tsmuxer](https://github.com/justdan96/tsMuxer) 获取流信息、用 [eac3to](https://forum.doom9.org/showthread.php?t=125966) 实际执行抽取。由于有些制作商会在各种情况下复制凑数音轨，抽取完成后需要检查并将冗余音轨抛弃，这里使用 [librosa](https://librosa.org/) 库实现检查。抽流完成后，利用 `qpfile` 和视频文件产生 PTS 对齐后的章节。最后使用 [mkvmerge](https://mkvtoolnix.download/) 封装。
 
+# 操作指北
+
+## 环境准备
+0. 将 `rkstool` 文件夹放到 Python 环境中 `Lib\site-packages` 文件夹下
+1. 使用 `pip` 安装 `librosa`：`pip install librosa`。
+2. 安装 [mkvmerge](https://mkvtoolnix.download/)，将安装目录（带有 `mkvmerge.exe` 的文件夹）加入系统 Path 或在实际使用中手动指定该路径。
+3. 下载 [eac3to](https://forum.doom9.org/showthread.php?t=125966)、[tsmuxer](https://github.com/justdan96/tsMuxer) 和 [ffmpeg](https://github.com/BtbN/FFmpeg-Builds/releases)（暂时只支持 ffmpeg4），将包含对应可执行文件的目录加入系统 Path、或在实际使用中手动指定该路径。
+
+## 加载工具链
+在任意位置打开一个 python 控制台：
+```python
+import rkstool as rkt
+```
+上述代码引入了工具链，如果没有报错说明工具链的 python 支持没有问题。工具链的每个步骤都是一个函数，比如创建硬链接副本被包装为一个 `link` 函数，由于该函数在 `rkstool` 中、而上述代码将 `rkstool` 缩写成 `rkt`，使用 `link` 函数时只需写
+```python
+rkt.link(some_path)
+```
+即可。
+
+另一种不太推荐的操作形式是：
+```python
+from rkstool import *
+link(some_path)
+```
+这将 `rkstool` 中的所有函数都暴露了出来，获得的唯一好处是你不用再写 `rkt.`。
+
+## 创建副本
+假设你的源是 P2P 下载的，在很长一段时间保种是一类刚需。此时你可以对整个源做硬链接（需要在 `NTFS` 分区中进行此操作）
+
 # Original Toolchain GUIDELINE
 ## 1. "ks_0link&更改权限.exe"
 第一步是通过硬链接（因此请在 `NTFS` 格式硬盘上完成所有工作）创建 `BDMV` 源副本，在此之前你需要整理一下 `BDMV`，类似这样：

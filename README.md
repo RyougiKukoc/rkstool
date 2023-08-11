@@ -31,7 +31,7 @@
 3. 下载 [eac3to](https://forum.doom9.org/showthread.php?t=125966)、[tsmuxer](https://github.com/justdan96/tsMuxer) 和 [ffmpeg](https://github.com/BtbN/FFmpeg-Builds/releases)（暂时只支持 ffmpeg4），将包含对应可执行文件的目录加入系统 Path、或在实际使用中手动指定该路径。
 
 ## 加载工具链
-在任意位置打开一个 python 控制台：
+在任意位置打开一个 python 控制台，输入：
 ```python
 import rkstool as rkt
 ```
@@ -40,7 +40,6 @@ import rkstool as rkt
 rkt.link(some_path)
 ```
 即可。
-
 另一种不太推荐的操作形式是：
 ```python
 from rkstool import *

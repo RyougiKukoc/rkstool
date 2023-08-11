@@ -3,25 +3,6 @@
 
 **Special Thanks to Jan, x_x.**
 
-## 设计构想
-首先，为了辅种方便和误操作后能够重开，需要对整个原种做硬链接；***提示：你不能在 FAT 格式的分区上做硬链接，推荐在 NTFS 分区上完成工作。***
-
-原盘硬链接的结果是可以随意剪切粘贴重命名的，出于方便，需要手动整理原盘文件结构，整理好后可被称为一个“工作区”（WorkSpace），后文会给出一个工作区的例子，简单来说工作区下需陈列一系列对齐的原盘，每个原盘对应一个子文件夹，子文件夹下面有 `BDMV`、该 `BDMV` 下有 `STREAM`，即删去中间所有不必要的单层嵌套。*特别地，对于一些只含一个原盘的种子，允许整理的时候直接把 `BDMV` 及其同级文件夹暴露在工作区下，工具链自动把工作区下的这些裸露原盘打包*。对每个原盘，计算出所有的 `qpfile`。对每个原盘内的每个文件，解码其视频流，筛选出无需压制的视频文件和由于种种原因无法完整解码的视频文件并标记。
-
-上一步完成后，工具链将所有原盘的未被标记的视频文件及其对应的 `qpfile`（如果有的话）抽出，硬链接到工作区下与所有原盘平级的一个 `#Collection` 文件夹内，并重命名成 `BDName_FileName` 的格式。
-
-上一步完成后，对于 `#Collection` 文件夹，直到抽混流步骤之前，工具链对 BD 和普通压制任务（如 WEB）一视同仁。
-
-接下来要做的是分类，分类的原则是处理相似的放在一个子文件夹内、内容相似的放在一个子文件夹内。具体的实现方法是手动新建一系列子文件夹，将视频文件（工具链可以指定可识别的后缀）分类放入后，工具链再将其对应的（文件名前缀相同的）辅助文件一并塞入对应的文件夹。
-
-分类完成后就可以执行压制了，批量化压制的整体构想是：有一个 `.vpy` 文件，实现对某视频文件的处理；又有一个 `.py` 文件，具体执行压制命令；即最后批量运行的时候只需运行所有合法的 `.py` 文件即可。由于之前已经对视频文件进行了分类，分类好的子文件夹里的所有视频文件可以被认为是能用同一预处理送压的，因此工具链还需具备将某一组 `.vpy` 和 `.py` 模板映射给某文件夹内的所有视频文件的功能。
-
-映射部分吸取了前工具链的经验，将 `.vpy` 和 `.py` 分别映射，并可以指定是否强制覆盖。映射源只需是文本文件，后缀无所谓。提供两个映射符号：文本中的 `$src` 对应要映射的文件名（比如“BD1_00000.m2ts”）、`$bas` 对应要映射的文件名前缀（比如“BD1_00000”）。
-
-压制部分，考虑到一些人的多开压制需求，同时支持多开模式和检查模式：一个视频文件在压制时会产生一个 `.busy` 标记，多开模式下碰到该标记自动跳过，检查模式下碰到该标记则覆盖重压。每个视频压完后，利用 vapoursynth 检查压制后的视频与源是否帧数相同，不同则被认为断压，产生一个 `.break` 标记。工具链提供一个“重压次数”参数，允许在次数范围内检查标记并重压。
-
-对于 BDRip 来说，压制完成后就可以进行抽混流了。由于一些原因，我用 [tsmuxer](https://github.com/justdan96/tsMuxer) 获取流信息、用 [eac3to](https://forum.doom9.org/showthread.php?t=125966) 实际执行抽取。由于有些制作商会在各种情况下复制凑数音轨，抽取完成后需要检查并将冗余音轨抛弃，这里使用 [librosa](https://librosa.org/) 库实现检查。抽流完成后，利用 `qpfile` 和视频文件产生 PTS 对齐后的章节。最后使用 [mkvmerge](https://mkvtoolnix.download/) 封装。
-
 # 操作指北
 
 ## 环境准备
@@ -40,6 +21,7 @@ import rkstool as rkt
 rkt.link(some_path)
 ```
 即可。
+
 另一种不太推荐的操作形式是：
 ```python
 from rkstool import *
@@ -48,160 +30,107 @@ link(some_path)
 这将 `rkstool` 中的所有函数都暴露了出来，获得的唯一好处是你不用再写 `rkt.`。
 
 ## 创建副本
-假设你的源是 P2P 下载的，在很长一段时间保种是一类刚需。此时你可以对整个源做硬链接（需要在 `NTFS` 分区中进行此操作）
-
-# Original Toolchain GUIDELINE
-## 1. "ks_0link&更改权限.exe"
-第一步是通过硬链接（因此请在 `NTFS` 格式硬盘上完成所有工作）创建 `BDMV` 源副本，在此之前你需要整理一下 `BDMV`，类似这样：
+假设你的源是 P2P 下载的，在很长一段时间保种是一类刚需。此时你可以对整个源做硬链接（需要在 `NTFS` 分区中进行此操作）。为了描述方便，我们假设你的源最开始长这样：
 ```text
-Vol.2-4_WorkSpace/
-└── Vol.2-4
-    ├── HORIMIYA_2
-    │   ├── BDMV
-    │   │   ├── ...
-    │   │   └── STREAM
-    │   └── ...
-    ├── HORIMIYA_3
-    │   ├── BDMV
-    │   │   ├── ...
-    │   │   └── STREAM
-    │   └── ...
-    └── HORIMIYA_4
-        ├── BDMV
-        │   ├── ...
-        │   └── STREAM
-        └── ...
+D:\P2P\[BDMV] KUBO-SAN WA MOB WO YURUSANAI
+├─KUBOSAN_1
+│  ├─BDMV
+│  │  ├─...
+│  │  └─STREAM
+│  ├─...
+│  └─Scans
+└─KUBOSAN_2
+    ├─BDMV
+    │  ├─...
+    │  └─STREAM
+    ├─...
+    └─Scans
 ```
-目录名怎样并不重要，反正最后都要重命名，自己能看懂就行了。
+运行命令：
+```python
+rkt.link(r"D:\P2P\[BDMV] Kubo-san wa Mob wo Yurusanai")
+```
+不出意外你会发现在 `D:\P2P\` 下硬链接出了一个 `[BDMV] Kubo-san wa Mob wo Yurusanai_link` 文件夹，这是我们为源创建的副本。***提示：你可以把一个文件夹从文件管理器拖到控制台上，这样能快速获取文件夹的绝对路径。当路径中存在空格时，它会自动补充一对双引号，此时只需先写一个 `r` 再将文件夹拖进来即可，python 中 `r""` 的字符串强制不转义反斜杠 `\`，更多关于路径的知识可以参考[这里](http://vapoursynth.com/doc/pythonreference.html#windows-file-paths)。当路径不存在空格时，它不会自动补充一对双引号，你需要先写 `r"`、将文件夹拖进来后再补一个 `"`。***
 
-接下来将 `Vol.2-4` 文件夹拖到 `ks_0link&更改权限.exe` 上，很快，`Vol.2-4_WorkSpace` 下出现了一个 `Link` 文件夹：
+## 整理工作区
+本环节涉及两个函数 `index` 和 `collect`。但在使用它们之前，我们需要将源结构整理成统一的格式，称为“工作区”。
+
+工作区下需陈列一系列对齐的原盘，每个原盘对应一个子文件夹，子文件夹下面有 `BDMV`、该 `BDMV` 下有 `STREAM`。利用硬链接副本可以自由剪切粘贴（复制粘贴不行，显然）、重命名的特性，可以将上节中创建的硬链接副本整理为：
 ```text
-Vol.2-4_WorkSpace/
-├── Link_Vol.2-4
-│   ├── HORIMIYA_2
-│   │   ├── BDMV
-│   │   │   ├── ...
-│   │   │   └── STREAM
-│   │   └── ...
-│   └── ...
-└── Vol.2-4
-    └── ...
+D:\P2P\[BDMV] KUBO-SAN WA MOB WO YURUSANAI_LINK
+├─Scans
+│  ├─1
+│  └─2
+└─WorkSpace-Kubosan
+    ├─KUBOSAN_1
+    │  ├─BDMV
+    │  │  ├─...
+    │  │  └─STREAM
+    │  └─...
+    └─KUBOSAN_2
+        ├─BDMV
+        │  ├─...
+        │  └─STREAM
+        └─...
 ```
-内容看起来应该完全一样，我建议检查一下 `STREAM` 里面的 `m2ts` 数量是否正确。
+注意到原种中的 Scans 文件夹没有卷标，这里将其卷标打上后抽出到 Scans 文件夹下。而 BD 主体则被扔进 WorkSpace-Kubosan 子文件夹中，这即是上文所述的“工作区”。工作区中的每一卷原盘都在一个子文件夹内，该子文件夹下没有多余的嵌套。
 
-## 2. "ks_1index_api4.exe"
-下一步是索引所有的流，将 `ks_1index_api4.exe` 放到 `Link_Vol.2-4/` 目录下双击。不出意外它应该运行较长时间，如果你想减少不必要的工程量也可以把不用做的 `STREAM` 删掉（比如如果你已经压过某些文件不需要再处理它们了）。
+整理好后我们对工作区中的每一部 BD 生成章节对应的 qpfile 并检查视频流，从中选择需要压制的文件并标记，方便后续的抽出。运行命令：
+```python
+rkt.index(r"D:\P2P\[BDMV] Kubo-san wa Mob wo Yurusanai\WorkSpace-Kubosan")
+```
+如果你没有将 ffmpeg 放入系统 path，上述命令需要增加一个描述 ffmpeg 位置的参数，假如你的 ffmpeg 放在 `E:\green_software\ffmpeg_4.4\bin\ffmpeg.exe`，将上述命令改成：
+```python
+rkt.index(r"D:\P2P\[BDMV] Kubo-san wa Mob wo Yurusanai\WorkSpace-Kubosan", ffmpeg_fp=r"E:\green_software\ffmpeg_4.4\bin\ffmpeg.exe")
+```
+该函数不出意外会运行很长时间。
 
-做完之后，你应该能看到每个能播放的 `m2ts` 旁边多了三个文件，一个是索引 `lwi`，一个是章节 `chapter`，还有一个帧率 `def` 文件。
+接下来，我们将每一部 BD 中需要压制的文件及相关 qpfile 硬链接出来。运行命令：
+```python
+rkt.collect(r"D:\P2P\[BDMV] Kubo-san wa Mob wo Yurusanai\WorkSpace-Kubosan")
+```
+很快，在工作区（`WorkSpace-Kubosan` 文件夹）下生成了一个 #Collection 文件夹。文件夹内是 m2ts 文件和 qpfile 文件，并添加了来源前缀。
 
-## 3. "ks_2pre.exe"
-接下来我们整理文件，把流和章节提取出来。将 `ks_2pre.exe` 放到 `Link_Vol.2-4/` 目录下双击。很快，`Link_Vol.2-4/` 下出现了一个名为 `#ks` 的文件夹：
+# 手册
+## link
+函数原型：
+```python
+link(workspace_fp: str)
+```
+传入一个参数 `workspace_fp` 表示任意想要硬链接的文件夹路径，函数会生成 `workspace_fp + ‘_link’` 的硬链接副本。
+
+如果 `workspace_fp + ‘_link’` 已存在，则在 `workspace_fp + ‘_link1’` 创建硬链接；若 `workspace_fp + ‘_link1’` 已存在，则在 `workspace_fp + ‘_link2’` 创建硬链接，以此类推。
+
+## index
+函数原型：
+```python
+index(workspace_fp: str, logger_fp: str = None, ffmpeg_fp: str = None, qponly: bool = False)
+```
+传入一个参数 `workspace_fp` 表示要处理的工作区路径，函数对工作区下的每一个 BD 子文件夹生成 qpfile 并检流、对检流出错和肉酱文件进行标记。
+
+`logger_fp`：指定日志路径。如果不指定，函数会在工作区下记录日志文件 `index.年月日时分秒.log`。
+
+`ffmpeg_fp`：指定 ffmpeg 路径。如果不指定，函数会在系统 Path 中找。
+
+`qponly`：是否只生成 qpfile、不检流（也不会标记 vserr 文件）。
+
+特别地，如果工作区只含一个 BD，你可以在整理时不为它单独建立一个文件夹，即路径可以是：
 ```text
-./Vol.2-4_WorkSpace/Link_Vol.2-4/
-├── #ks
-│   ├── 24_HORIMIYA_2_00000.ks45.txt
-│   ├── 24_HORIMIYA_2_00000.m2ts
-│   ├── 24_HORIMIYA_2_00000.m2ts.lwi
-│   ├── ...
-│   ├── 24_HORIMIYA_3_00000.ks45.txt
-│   ├── 24_HORIMIYA_3_00000.m2ts
-│   ├── 24_HORIMIYA_3_00000.m2ts.lwi
-│   ├── ...
-│   ├── 24_HORIMIYA_4_00000.ks45.txt
-│   ├── 24_HORIMIYA_4_00000.m2ts
-│   ├── 24_HORIMIYA_4_00000.m2ts.lwi
-│   └── ...
-├── HORIMIYA_2
-│   └── ...
-├── HORIMIYA_3
-│   └── ...
-├── HORIMIYA_4
-│   └── ...
-├── ks_1index_api4.exe
-└── ks_2pre.exe
+WorkSpace
+├─BDMV
+│  ├─...
+│  └─STREAM
+├─...
 ```
-命名不难理解。
+运行本函数后，会自动创建一个文件夹将这个 BD 包装起来。
 
-## 4. "ks_3sort.exe"
-这是一个分类工具，双击打开，你能看见一个长输入框、一个短输入框和下面大片的空白。
+对于工作区下的多个 BD，每一个 BD 内的所有文件完成检流后会在 STREAM 文件夹下生成一个 `index.done` 文件标记，检测到该标记的 BD 不会重复检流。
 
-这个工具最基本的用法是，在资源管理器中多选同类型的 `m2ts`（比如他们都是 `PV`）拖入空白区域，在长输入框中输入类名，然后按下 `Ctrl+Q` 执行，在资源管理器中你不难看到所有相关文件都被丢进类子文件夹中了。
+检流错误的文件会生成一个 `.vserr` 标记，标记文件中会记录报错日志。
 
-如果你不想处理某个文件，你可以不把它分类，留在文件夹中也行、直接删掉也行，只要它的旁边没有由后文所述生成的脚本，它就不会被送压和封装。
-
-下面是一个整理（删除不必要文件）后的版本：
-```text
-./Vol.2-4_WorkSpace/Link_Vol.2-4/#ks/
-├── Menu
-│   ├── 24_HORIMIYA_2_00013.ks45.txt
-│   ├── 24_HORIMIYA_2_00013.m2ts
-│   ├── 24_HORIMIYA_2_00013.m2ts.lwi
-│   └── ...
-├── OP Ver.2
-│   ├── 24_HORIMIYA_4_00002.ks45.txt
-│   ├── 24_HORIMIYA_4_00002.m2ts
-│   └── 24_HORIMIYA_4_00002.m2ts.lwi
-├── Preview
-│   ├── 24_HORIMIYA_2_00002.ks45.txt
-│   ├── 24_HORIMIYA_2_00002.m2ts
-│   ├── 24_HORIMIYA_2_00002.m2ts.lwi
-│   └── ...
-└── TV
-    ├── 24_HORIMIYA_2_00000.ks45.txt
-    ├── 24_HORIMIYA_2_00000.m2ts
-    ├── 24_HORIMIYA_2_00000.m2ts.lwi
-    └── ...
+## collect
+函数原型：
+```python
+collect(workspace_fp: str)
 ```
-
-## 5. "ks_4map.exe"
-接下来我们写批处理脚本，它是一个 `.ini` 文件，一个简单的例子见 `BD_Sample.ini`。
-
-两个分号后的是注释。你需要为不同帧率创建不同的脚本，如果要处理的源中没有 30FPS 的，你可以不写它。处理同一类型的源需要两个脚本，其中一个是 `VapourSynth` 脚本，另一个是 `Python` 脚本，前者不必解释，后者的作用基本就是给出 `x265` 命令。
-
-如 `BD_Sample.ini` 中所示，写 `VapourSynth` 脚本时你可以用 `$src` 表示源文件的文件名，写 `Python` 脚本时可以用 `$bas` 表示生成 `.vpy` 文件名的前缀，`.vpy` 文件名的全称受到定义的影响，如 `24.m2ts/24.vpy` 将生成 `$bas.24.vpy`，这一点应该不难理解。
-
-`os.environ['Path']` 开头的一句表示设置系统路径，其后两个 `os.system(...)` 分别起到处理索引文件和创建 `qpfile` 的作用，他们依赖 `m2tslwi.exe` 和 `mkqpfile45.exe`，这是 `x26x` 中的可执行文件，他们已经被加入到 `os.environ['Path']` 中。
-
-当你编写好一个 `.ini` 配置文件（比如 `Bilateral.ini`）时，把它放在上一步分好的某个类子文件夹下，比如 `Menu`，接着将它拖到 `ks_4map.exe` 上运行，它将为每个合法的 `m2ts` 创建两个对应的脚本：
-```text
-./Vol.2-4_WorkSpace/Link_Vol.2-4/#ks/Menu/
-├── 24_HORIMIYA_2_00013.24.vpy
-├── 24_HORIMIYA_2_00013.ks45.txt
-├── 24_HORIMIYA_2_00013.m2ts
-├── 24_HORIMIYA_2_00013.m2ts.lwi
-├── 24_HORIMIYA_2_00013.py
-├── 24_HORIMIYA_3_00013.24.vpy
-├── 24_HORIMIYA_3_00013.ks45.txt
-├── 24_HORIMIYA_3_00013.m2ts
-├── 24_HORIMIYA_3_00013.m2ts.lwi
-├── 24_HORIMIYA_3_00013.py
-├── 24_HORIMIYA_4_00013.24.vpy
-├── 24_HORIMIYA_4_00013.ks45.txt
-├── 24_HORIMIYA_4_00013.m2ts
-├── 24_HORIMIYA_4_00013.m2ts.lwi
-├── 24_HORIMIYA_4_00013.py
-└── Bilateral.ini
-```
-
-你可以双击 `.vpy` 预览，也可以在此基础上进行修改。
-
-编写 `x265` 参数的过程中，你需要注意必须引入 `--min-keyint 1 --no-open-gop` 参数，除非他们已经被默认包含。另外，`BD_Sample.ini` 里写的是 `x265_10`，如果你和我情况相同显然就要改成 `x265-10b`。
-
-### 针对脚本使用者的特殊说明
-
-现存脚本包括 API3 和 API4 两种，无论如何你都应该尽量使用 API4，API4 由于工具链当前版本本身的原因，暂不支持使用 API4 版本的 VapourSynth 来进行一些内部操作，要让 API4 的脚本能够正常使用，目前的办法是在配置文件中手动指定 `VSPipe.exe` 的位置为 API4 版本的 `VSPipe.exe` 的位置，详情请参考 MapFilter 仓库的[说明](https://github.com/AliceTeaParty/MapFilter#%E5%85%B3%E4%BA%8E-api4-%E7%89%88%E6%9C%AC%E7%9A%84%E7%89%B9%E6%AE%8A%E8%AF%B4%E6%98%8E)。
-
-## 6. "ks_5rip_api4.exe" & "ks_5rip_264_api4.exe"
-这个可执行文件自动完成压制工作，其作用域逻辑可以参见前述章节，推荐把它放在目录下双击，比如想只压制 `Menu/` 的内容，你就把它放在 `Menu/` 下，或者如果你想压制所有内容，就放在 `#ks/` 下。
-
-`ks_5rip_264_api4.exe` 支持使用 x264 编码器时输出 `.264` 后缀的文件，但也因此忽略了一些检查，压制 hevc 时建议还是使用 `ks_5rip_api4.exe`。
-
-## 7. "ks_6mkv_flac_success_sound_off_api4.exe"
-
-接下来需要进行抽轨、封装、提取章节、对齐 `pts`、再次封装的一系列流程，对齐 `pts` 主要是为了方便切割。显然你不能删掉 `m2ts` 文件和 `qpfile` 文件，没了前者你就不能提取音轨和字幕轨，没了后者你就不能对齐 `pts` 了。一般情况下你把它放在 `#ks/` 下双击运行即可，它会检查现有的封装并合理跳过。
-
-需要注意的是，这个可执行文件会删掉距离视频边缘两秒以内的章节，如果你想要保留开头的章节，你可以在下一步中使用 `ForceAddChapter.exe` 代替 `ks_7mkv2flac_aac.exe`，它会在视频开头添加一个章节。
-
-## 8. "ks_7mkv2flac_aac_sup.exe"
-
-这是个程序它负责将第二条及以后的音轨转成 `AAC` 有损编码。你实际上可以选择任意一条音轨，使其保留成无损（但只有它一个可以），要想实现这件事只需在运行本程序之前交换音轨顺序，把你想要保留成无损的音轨调到第一个即可。一般情况下你把它放在 `#ks/` 下双击运行就好。
+传入一个参数 `workspace_fp` 表示要整理的工作区路径。该函数将工作区中所有 BD 里没有 `.vserr` 标记的文件及其对应的 qpfile 硬连接到工作区下的 #Collection 文件夹中。如果 #Collection 已经存在，则会硬连接到 #Collection1 中；若 #Collection1 存在，则会硬连接到 #Collection2 中，以此类推。

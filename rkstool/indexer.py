@@ -65,4 +65,6 @@ def index(workspace_fp: str, logger_fp: str = None, ffmpeg_fp: str = None, qponl
                         if os.path.exists(err_fp):
                             os.remove(err_fp)
                         logger.info(f'{bd}///{m2ts} decoded successfully!\n')
+            with open(donemark, 'w') as dmf:
+                dmf.write('Decoded.')
                             

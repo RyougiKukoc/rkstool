@@ -97,7 +97,7 @@ rkt.collect(r"D:\P2P\[BDMV] Kubo-san wa Mob wo Yurusanai\WorkSpace-Kubosan")
 2. 将源（比如 m2ts 文件）拖入子文件夹，不用管源的同名不同后缀文件（比如同名 qpfile）；
 3. 将所有的源分类好后，运行：
 ```python
-rkt.simple_sort(r"D:\P2P\[BDMV] Kubo-san wa Mob wo Yurusanai\WorkSpace-Kubosan")
+rkt.simple_sort(path_to_collection)
 ```
 
 如果待归纳的源不是 m2ts 文件，或者多于一种文件，可以将文件后缀以列表的形式引入参数 `accept_ext` 中，比如待归纳的源有 m2ts 和 mkv 两种：

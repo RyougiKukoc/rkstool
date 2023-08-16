@@ -91,6 +91,58 @@ rkt.collect(r"D:\P2P\[BDMV] Kubo-san wa Mob wo Yurusanai\WorkSpace-Kubosan")
 ```
 很快，在工作区（`WorkSpace-Kubosan` 文件夹）下生成了一个 #Collection 文件夹。文件夹内是 m2ts 文件和 qpfile 文件，并添加了来源前缀。
 
+## 分类
+在刚整理出的 #Collection 文件夹中，所有的文件都放在一起，这对批处理而言很不方便。`simple_sort` 函数提供了一个简易的分类器，它的用法如下：
+1. 首先，在 #Collection 文件夹中新建子文件夹并命名；
+2. 将源（比如 m2ts 文件）拖入子文件夹，不用管源的同名不同后缀文件（比如同名 qpfile）；
+3. 将所有的源分类好后，运行：
+```python
+rkt.simple_sort(r"D:\P2P\[BDMV] Kubo-san wa Mob wo Yurusanai\WorkSpace-Kubosan")
+```
+
+如果待归纳的源不是 m2ts 文件，或者多于一种文件，可以将文件后缀以列表的形式引入参数 `accept_ext` 中，比如待归纳的源有 m2ts 和 mkv 两种：
+```python
+rkt.simple_sort(path_to_collection, accept_ext=['.m2ts', '.mkv'])
+```
+
+## 脚本映射
+每类源的处理脚本理应相同，故可以有一个通用的模板。模板的映射针对指定后缀的源，模板中对于输入源的文件名支持两种映射：
+1. `$bas`: 表示对应原文件不包含后缀的文件名 (basename)
+2. `$src`: 表示对应原文件的完整文件名
+上述字符在映射到具体脚本中时将不会被引号自动包括起来，请在模板中用引号包括它们。
+
+一种合理的脚本组合是：为每个原文件创建一个 `.vpy` 文件做预处理，然后创建一个 `.py` 文件执行编码，比如：
+```python
+# template.vpy
+import vapoursynth as vs
+src = vs.core.lsmas.LWLibavSource(r"$src")
+src.set_output()
+```
+```python
+# template.py
+import os
+os.system(r'vspipe -c y4m "$bas.vpy" - | x265 --y4m --qpfile "$bas.qpfile" -o "$bas.hevc" -')
+```
+在***对应类文件夹下***创建好模板之后，运行
+```python
+rkt.map_config(path_to_vpy)  # 默认映射成 .vpy 文件
+rkt.map_config(path_to_py, '.py')
+```
+将为模板所在目录下所有 `.m2ts` 后缀的源创建同名的 `.py` 和 `.vpy` 脚本。
+
+若源后缀是 `.m2ts` 以外的文件，引入 `accept_ext` 修改，如想同时也给 `.mkv` 后缀的文件创建脚本：
+```python
+rkt.map_config(path_to_py, '.py', accept_ext=['.m2ts', '.mkv'])
+# .vpy 文件同理
+```
+
+### 整理 qpfile
+由于本工具链会为 30fps 的片源同时生成对应 24fps、30fps 和 60fps 的 qpfile（对应后缀分别为 `.24.qpfile`、`.30.qpfile` 和 `.60.qpfile`），对后续封装中对齐 PTS 有影响，因此若使用本工具链提供的封装工具，需将上述三种 qpfile 后缀选出一种并重命名为 `.qpfile`，比如要保留 30fps 对应的 qpfile：
+```python
+rkt.make_qpfile(path_to_class, '.30.qpfile')
+```
+如果出于某种原因，在运行 `make_qpfile` 前已经存在 `.qpfile` 文件，则其会被放在同文件夹下自动创键的 waste_qp 子文件夹内，如果想要强制改写该文件，可以引入参数 `force=True`。
+
 # 手册
 ## link
 函数原型：
@@ -134,3 +186,29 @@ WorkSpace
 collect(workspace_fp: str)
 ```
 传入一个参数 `workspace_fp` 表示要整理的工作区路径。该函数将工作区中所有 BD 里没有 `.vserr` 标记的文件及其对应的 qpfile 硬连接到工作区下的 #Collection 文件夹中。如果 #Collection 已经存在，则会硬连接到 #Collection1 中；若 #Collection1 存在，则会硬连接到 #Collection2 中，以此类推。
+
+## simple_sort
+函数原型：
+```python
+simple_sort(tosort_fp: str, accept_ext: list = ['.m2ts']):
+```
+对 `tosort_fp` 指定的路径，搜索其所有子文件夹中所有后缀在 `accept_ext` 列表中的文件，将 `tosort_fp` 下文件名前缀能够匹配的文件归类到对应的子文件夹中。
+
+## make_qpfile
+函数原型：
+```python
+make_qpfile(dir: str, qp_ext: str = '.24.qpfile', force: bool = False):
+```
+将路径 `dir` 下的所有后缀为 `qp_ext` 的 qpfile 重命名成 `.qpfile`，若在运行 `make_qpfile` 前已经存在 `.qpfile` 文件，则其会被放在同文件夹下自动创键的 waste_qp 子文件夹内。若指定 `force=True`，则对已经存在的 `.qpfile` 强行改写。
+
+## map_config
+函数原型：
+```python
+def map_config(config_fp: str, config_ext = '.vpy', replace: bool = False, \
+    accept_ext = ['.m2ts']):
+```
+对指定的模板，为每个指定后缀的源创建一份制定后缀的脚本文件。
+`config_fp`：模板的路径。
+`config_ext`：要映射的脚本后缀。
+`replace`：是否要将已经存在的脚本强行改写成新模板（否则跳过）。
+`accept_ext`：模板映射对应的源文件的后缀名。

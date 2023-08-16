@@ -209,7 +209,11 @@ def map_config(config_fp: str, config_ext = '.vpy', replace: bool = False, \
     accept_ext = ['.m2ts']):
 ```
 对指定的模板，为每个指定后缀的源创建一份制定后缀的脚本文件。
+
 `config_fp`：模板的路径。
+
 `config_ext`：要映射的脚本后缀。
+
 `replace`：是否要将已经存在的脚本强行改写成新模板（否则跳过）。
+
 `accept_ext`：模板映射对应的源文件的后缀名。

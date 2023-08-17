@@ -154,6 +154,18 @@ rkt.rip(path_to_rip)
 rkt.rip(path_to_rip, accept_ext=['.m2ts', '.mkv'])
 ```
 
+## 蓝光源抽混流
+首先，如果你没有将 eac3to、ffprobe、tsmuxer 和 mkvmerge 加入系统 Path，请在`eac3to_fp`、`ffprobe_fp`、`tsmuxer_fp` 和 `mkvmerge_fp` 中对应地指定可执行文件路径。
+
+在压制完成后，通过 `mux_bd` 文件对蓝光源抽混流、封装成 `.mkv` 文件：
+```python
+rkt.mux_bd(path_to_mux)  # 默认封装 .hevc 视频流
+```
+如果是用 x264 压制出的 `.264` 视频流，可以在 `vc_ext` 参数中指定：
+```python
+rkt.mux_bd(path_to_mux, vc_ext='.264')
+```
+
 # 手册
 ## link
 函数原型：
@@ -201,22 +213,21 @@ collect(workspace_fp: str)
 ## simple_sort
 函数原型：
 ```python
-simple_sort(tosort_fp: str, accept_ext: list = ['.m2ts']):
+simple_sort(tosort_fp: str, accept_ext: list = ['.m2ts'])
 ```
 对 `tosort_fp` 指定的路径，搜索其所有子文件夹中所有后缀在 `accept_ext` 列表中的文件，将 `tosort_fp` 下文件名前缀能够匹配的文件归类到对应的子文件夹中。
 
 ## make_qpfile
 函数原型：
 ```python
-make_qpfile(dir: str, qp_ext: str = '.24.qpfile', force: bool = False):
+make_qpfile(dir: str, qp_ext: str = '.24.qpfile', force: bool = False)
 ```
 将路径 `dir` 下的所有后缀为 `qp_ext` 的 qpfile 重命名成 `.qpfile`，若在运行 `make_qpfile` 前已经存在 `.qpfile` 文件，则其会被放在同文件夹下自动创键的 waste_qp 子文件夹内。若指定 `force=True`，则对已经存在的 `.qpfile` 强行改写。
 
 ## map_config
 函数原型：
 ```python
-def map_config(config_fp: str, config_ext = '.vpy', replace: bool = False, \
-    accept_ext = ['.m2ts']):
+map_config(config_fp: str, config_ext = '.vpy', replace: bool = False, accept_ext = ['.m2ts'])
 ```
 对指定的模板，为每个指定后缀的源创建一份制定后缀的脚本文件。
 
@@ -231,7 +242,7 @@ def map_config(config_fp: str, config_ext = '.vpy', replace: bool = False, \
 ## rip
 函数原型：
 ```python
-def rip(
+rip(
     rip_path: str,
     recursion: bool = True, 
     vc_ext: str = '.hevc',
@@ -241,7 +252,7 @@ def rip(
     logger_fp: str = None,
     num_redo: int = 1,
     multi_task: bool = False,
-):
+)
 ```
 运行指定路径下的所有压制脚本。压制时将工作路径切换到源所在路径，使用 [run_path](https://docs.python.org/3/library/runpy.html#runpy.run_path) 执行脚本，支持多开模式和检查模式（默认）。压制开始时产生两种文件标记：`.busy` 和 `.break`。`.busy` 标记在脚本执行前创建，执行完成后删除，标记该视频流是正在被压制；在脚本执行完成后比较源的帧数和压制成品的帧数，如果帧数不同则创建 `.break` 标记，如果帧数相同则将现有 `.break` 标记移除。若对于一个源，存在指定后缀的视频流且不存在 `.break` 标记，则不再压制和检查帧数；若存在指定的视频流且存在 `.busy` 标记，在多开模式下将跳过该项压制，在检查模式下将重压。
 
@@ -262,3 +273,32 @@ def rip(
 `num_redo`：重新检查的次数。第一轮压制完成后会逐一检查文件是否有 `.break` 标记，有则重压。
 
 `multi_task`：`True` 开启多开模式，默认为 `False`，检查模式。
+
+## mux_bd
+函数原型：
+```python
+mux_bd(
+    mux_path: str,
+    recursion: bool = True, 
+    vc_ext: str = '.hevc',
+    eac3to_fp: str = None,
+    ffprobe_fp: str = None,
+    tsmuxer_fp: str = None,
+    mkvmerge_fp: str = None,
+)
+```
+对指定路径下所有的 `.m2ts` 源进行抽混流，文件名格式为 `{basename} (BD {encoder} {w}x{h} FLAC[x2+] SUP[x2+]).mkv`。必须存在 `basename.qpfile` 做 PTS 对齐，否则请将文件归至他类。
+
+`mux_path`：指定抽混流的工作路径。
+
+`recursion`：是否对 `mux_path` 下所有子孙文件夹中的文件做抽混流。
+
+`vc_ext`：压制成品视频流后缀，暂时只支持 `.hevc`、`.avc`、`.264` 三种，且只产生 `x264` 和 `x265` 两种编码器名。
+
+`eac3to_fp`：指定 eac3to 路径。如果不指定，函数会在系统 Path 中找。
+
+`ffprobe_fp`：指定 ffprobe 路径。如果不指定，函数会在系统 Path 中找。
+
+`tsmuxer_fp`：指定 tsmuxer 路径。如果不指定，函数会在系统 Path 中找。
+
+`mkvmerge_fp`：指定 mkvmerge 路径。如果不指定，函数会在系统 Path 中找。

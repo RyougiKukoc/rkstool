@@ -112,7 +112,7 @@ rkt.simple_sort(path_to_collection, accept_ext=['.m2ts', '.mkv'])
 
 上述字符在映射到具体脚本中时将不会被引号自动包括起来，请在模板中用引号包括它们。
 
-一种合理的脚本组合是：为每个源文件创建一个 `.vpy` 文件做预处理，然后创建一个 `.py` 文件执行编码，比如：
+本工具链支持的批量压制采用如下脚本组合：为每个源文件创建一个 `.vpy` 文件做预处理，然后创建一个 `.py` 文件执行编码，比如：
 ```python
 # template.vpy
 import vapoursynth as vs
@@ -143,6 +143,16 @@ rkt.map_config(path_to_py, '.py', accept_ext=['.m2ts', '.mkv'])
 rkt.make_qpfile(path_to_class, '.30.qpfile')
 ```
 如果出于某种原因，在运行 `make_qpfile` 前已经存在 `.qpfile` 文件，则其会被放在同文件夹下自动创键的 waste_qp 子文件夹内，如果想要强制改写该文件，可以引入参数 `force=True`。
+
+## 批量压制
+脚本映射完成后，通过 `rip` 函数批量执行 `.py` 文件：
+```python
+rkt.rip(path_to_rip)
+```
+函数自动对文件夹及所有子孙文件夹内后缀为 `.m2ts` 的源寻找同 basename 的 `.py` 文件并运行。如果想要增加源的种类，引入 `accept_ext` 参数，比如同时为后缀为 `.mkv` 的源批量压制：
+```python
+rkt.rip(path_to_rip, accept_ext=['.m2ts', '.mkv'])
+```
 
 # 手册
 ## link
@@ -217,3 +227,38 @@ def map_config(config_fp: str, config_ext = '.vpy', replace: bool = False, \
 `replace`：是否要将已经存在的脚本强行改写成新模板（否则跳过）。
 
 `accept_ext`：模板映射对应的源文件的后缀名。
+
+## rip
+函数原型：
+```python
+def rip(
+    rip_path: str,
+    recursion: bool = True, 
+    vc_ext: str = '.hevc',
+    run_ext: str = '.py', 
+    accept_ext: list = ['.m2ts'],
+    run_name: str = '__main__',
+    logger_fp: str = None,
+    num_redo: int = 1,
+    multi_task: bool = False,
+):
+```
+运行指定路径下的所有压制脚本。压制时将工作路径切换到源所在路径，使用 [run_path](https://docs.python.org/3/library/runpy.html#runpy.run_path) 执行脚本，支持多开模式和检查模式（默认）。压制开始时产生两种文件标记：`.busy` 和 `.break`。`.busy` 标记在脚本执行前创建，执行完成后删除，标记该视频流是正在被压制；在脚本执行完成后比较源的帧数和压制成品的帧数，如果帧数不同则创建 `.break` 标记，如果帧数相同则将现有 `.break` 标记移除。若对于一个源，存在指定后缀的视频流且不存在 `.break` 标记，则不再压制和检查帧数；若存在指定的视频流且存在 `.busy` 标记，在多开模式下将跳过该项压制，在检查模式下将重压。
+
+`rip_path`：待压制的根目录路径。
+
+`recursion`：是否对 `rip_path` 所有子孙文件夹都执行压制，否则忽略 `rip_path` 中的所有子文件夹。
+
+`vc_ext`：压制成品文件的后缀。
+
+`run_ext`：执行的 Python 脚本文件后缀（允许定制后缀如 `.30.py`），这个后缀是相对于源的 basename 而言的。
+
+`accept_ext`：以列表的形式指定源文件的后缀类型。
+
+`run_name`：参考 [runpy](https://docs.python.org/3/library/runpy.html#runpy.run_path) 的参数解释。
+
+`logger_fp`：生成的日志的文件路径，如果不指定默认为 `rip_path` 下的 `rip.年月日时分秒.log`。
+
+`num_redo`：重新检查的次数。第一轮压制完成后会逐一检查文件是否有 `.break` 标记，有则重压。
+
+`multi_task`：`True` 开启多开模式，默认为 `False`，检查模式。

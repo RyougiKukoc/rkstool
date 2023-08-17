@@ -71,18 +71,17 @@ def rip(
     run_ext: str = '.py', 
     accept_ext: list = ['.m2ts'],
     run_name: str = '__main__',
-    logger = None, 
     logger_fp: str = None,
     num_redo: int = 1,
     multi_task: bool = False,
 ):
     assert type(num_redo) == int
     rip_path = os.path.abspath(rip_path)
-    if logger is None:
-        if logger_fp is None:
-            logger_fn = 'rip.' + datetime.datetime.now().strftime(r'%Y%m%d%H%M%S') + '.log'
-            logger_fp = os.path.join(rip_path, logger_fn)
-        logger = get_logger(logger_fp)
+    if logger_fp is None:
+        time_idx = datetime.datetime.now().strftime(r'%Y%m%d%H%M%S')
+        logger_fn = f'rip.{time_idx}.log'
+        logger_fp = os.path.join(rip_path, logger_fn)
+    logger = get_logger(logger_fp)
     dfs(
         rip_path=rip_path,
         recursion=recursion,

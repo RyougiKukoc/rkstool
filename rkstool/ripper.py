@@ -50,18 +50,31 @@ def dfs(
             os.remove(busy_fp)
         if not os.path.exists(vc_fp):  # spj for a unusual script
             continue
-        ori_frames = core.lsmas.LWLibavSource(tar_fp).num_frames
-        rip_frames = core.lsmas.LWLibavSource(vc_fp).num_frames
-        if ori_frames != rip_frames:
-            logger.warning('Number of frames cannot match!')
-            logger.info(f'{tar_fp}: {ori_frames}')
-            logger.info(f'{vc_fp}: {rip_frames}')
+
+        ori_clip = core.lsmas.LWLibavSource(tar_fp)
+        rip_clip = core.lsmas.LWLibavSource(vc_fp)
+        ori_frames = ori_clip.num_frames
+        rip_frames = rip_clip.num_frames
+        ori_duration = ori_frames * ori_clip.fps_den / ori_clip.fps_num
+        rip_duration = rip_frames * rip_clip.fps_den / rip_clip.fps_num
+        
+        if ori_clip.fps_den == rip_clip.fps_den and ori_clip.fps_num == rip_clip.fps_num:
+            if ori_frames == rip_frames:
+                if os.path.exists(break_fp):
+                    logger.info(f'{vc_fp} re-encoded successfully!')
+                    os.remove(break_fp)
+            else:
+                logger.warning('Number of frames cannot match!')
+                logger.info(f'{tar_fp}: {ori_frames}')
+                logger.info(f'{vc_fp}: {rip_frames}')
+                with open(break_fp, 'w') as breakf:
+                    breakf.write(f'{tar_fp}: {ori_frames}\n{vc_fp}: {rip_frames}')
+        elif abs(ori_duration - rip_duration) > 1:
+            logger.warning('Number of frames may not match!')
+            logger.info(f'{tar_fp}: {ori_duration:.6f}s')
+            logger.info(f'{vc_fp}: {rip_duration:.6f}s')
             with open(break_fp, 'w') as breakf:
                 breakf.write(f'{tar_fp}: {ori_frames}\n{vc_fp}: {rip_frames}')
-        else:
-            if os.path.exists(break_fp):
-                logger.info(f'{vc_fp} re-encoded successfully!')
-                os.remove(break_fp)
         
 
 def rip(

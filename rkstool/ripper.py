@@ -45,7 +45,9 @@ def dfs(
             continue
         with open(busy_fp, 'w') as busyf:
             busyf.write(f'{vc_fp} is being encoded.')
+        rec_env = os.environ['PATH']
         runpy.run_path(rpy_fp, run_name=run_name)
+        os.environ['PATH'] = rec_env
         if os.path.exists(busy_fp):
             os.remove(busy_fp)
         if not os.path.exists(vc_fp):  # spj for a unusual script

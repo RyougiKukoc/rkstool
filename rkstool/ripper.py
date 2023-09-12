@@ -77,6 +77,10 @@ def dfs(
             logger.info(f'{vc_fp}: {rip_duration:.6f}s')
             with open(break_fp, 'w') as breakf:
                 breakf.write(f'{tar_fp}: {ori_frames}\n{vc_fp}: {rip_frames}')
+        else:
+            if os.path.exists(break_fp):
+                logger.info(f'{vc_fp} may re-encoded successfully!')
+                os.remove(break_fp)
         
 
 def rip(

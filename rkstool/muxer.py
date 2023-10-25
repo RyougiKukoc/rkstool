@@ -13,7 +13,7 @@ _mkvmerge_fp = 'mkvmerge'
 
 
 def load_audio(audio_fp):
-    return librosa.load(audio_fp, sr=librosa.get_samplerate(audio_fp), mono=False)[0]
+    return librosa.load(audio_fp, sr=None, mono=False)[0]
 
 
 def dfs(

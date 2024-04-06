@@ -39,10 +39,13 @@ def dfs(
         vc_fp = os.path.join(rip_path, name + vc_ext)
         busy_fp = vc_fp + '.busy'
         break_fp = vc_fp + '.break'
-        if os.path.exists(vc_fp) and not os.path.exists(break_fp):
-            continue
         if os.path.exists(busy_fp) and multi_task:  # spj for multiple tasks
             continue
+        if os.path.exists(vc_fp):
+            if os.path.exists(break_fp) or os.path.exists(busy_fp):  # and not multi_task
+                pass  # overwrite this vc
+            else:
+                continue
         with open(busy_fp, 'w') as busyf:
             busyf.write(f'{vc_fp} is being encoded.')
         rec_env = os.environ['PATH']

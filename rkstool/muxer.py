@@ -146,6 +146,7 @@ def dfs(
             elif track == 's':
                 # sub_fp = os.path.join(mux_path, f'_mux_{id}s.sup')
                 os.remove(f'_mux_{id}s.sup')
+        os.remove(meta_fp)
 
 
 def mux_bd(

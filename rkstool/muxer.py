@@ -61,7 +61,6 @@ def dfs(
         track_meta = None
         tid = []
         fps = None
-        num_a, num_s = 0, 0
         for msg in r[0].decode().splitlines():
             if msg.startswith("Track ID:"):
                 tid.append(msg[9:].strip())
@@ -70,10 +69,8 @@ def dfs(
                 if code.startswith('V'):
                     _ = tid.pop()
                 elif code.startswith('A'):
-                    num_a += 1
                     track_meta = r'{}, "{}", track={}'.format(code, tar_fp, tid[-1])
                 else:
-                    num_s += 1
                     track_meta = r'{}, "{}", fps={}, track={}'.format(code, tar_fp, fps, tid[-1])
             elif msg.startswith("Stream delay:"):
                 timeshift = msg[13:].strip()
@@ -92,6 +89,18 @@ def dfs(
         r = p.communicate()
 
         # check audio dupe
+        to_merge_aud, to_merge_sub = [], []
+        demux_list = os.listdir(demux_fp)
+        for id in tid:
+            track_fp = None
+            for fn in demux_list:
+                if f'track_{id}' in fn:
+                    track_fp = os.path.join(demux_fp, fn)
+                    break
+            if track_fp.endswith('.sup'):
+                to_merge_sub.append()
+            
+
         for id, track in enumerate(media, 1):
             if track == 'a':
                 # aud_fp = os.path.join(mux_path, f'_mux_{id}a.flac')
@@ -111,6 +120,8 @@ def dfs(
         w, h =  GCFQP(vc_fp, qp_fp, chap_fp, _ffprobe_fp, _mkvmerge_fp)
 
         mkv_fp = os.path.join(mux_path, name + f' (BD {w}x{h} {enc}')
+        num_a = len(to_merge_aud)
+        num_s = len(to_merge_sub)
         if num_a > 1:
             mkv_fp += f' FLACx{num_a}'
         elif num_a == 1:

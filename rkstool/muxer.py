@@ -6,7 +6,7 @@ from .qpfile_chapter import GCFQP
 
 
 encdict = {'.hevc': 'x265', '.264': 'x264', '.avc': 'x264'}
-_eac3to_fp = 'eac3to'
+# _eac3to_fp = 'eac3to'
 _ffprobe_fp = 'ffprobe'
 _tsmuxer_fp = 'tsmuxer'
 _mkvmerge_fp = 'mkvmerge'
@@ -40,6 +40,7 @@ def dfs(
         chap_fp = os.path.join(mux_path, name + '.chapter.txt')
         busy_fp = vc_fp + '.busy'
         break_fp = vc_fp + '.break'
+        meta_fp = '_demux.meta'
         if ext not in ['.m2ts']:
             continue
         if not os.path.exists(vc_fp):
@@ -54,22 +55,33 @@ def dfs(
         # use tsmuxer to fetch stream info
         p = sp.Popen([_tsmuxer_fp, tar_fp], stdout=sp.PIPE, stderr=sp.PIPE)
         r = p.communicate()
-        flag = False  # flag: a start of a period of track
-        media = ""
-        for msg in r[0].decode().split('\r\n'):
-            if flag is False:
-                if msg.startswith("Track ID:"):
-                    flag = True
-            else:
-                if msg.startswith("Stream ID:"):
-                    code = msg[10:].strip()
-                    if code.startswith('V'):
-                        media += 'v'
-                    elif code.startswith('A'):
-                        media += 'a'
-                    else:
-                        media += 's'
-                    flag = False
+        meta = ["MUXOPT --no-pcr-on-video-pid --new-audio-pes --demux --vbr --vbv-len=500"]
+        track_meta = None
+        tid = []
+        fps = None
+        for msg in r[0].decode().splitlines():
+            if msg.startswith("Track ID:"):
+                tid.append(msg[9:].strip())
+            elif msg.startswith("Stream ID:"):
+                code = msg[10:].strip()
+                if code.startswith('V'):
+                    tid.pop()
+                elif code.startswith('A'):
+                    track_meta = r'{}, "{}", track={}'.format(code, tar_fp, tid[-1])
+                else:
+                    track_meta = r'{}, "{}", fps={}, track={}'.format(code, tar_fp, fps, tid[-1])
+            elif msg.startswith("Stream delay:"):
+                timeshift = msg[13:].strip()
+                if track_meta:
+                    track_meta += f', timeshift={timeshift}ms'
+            elif fps is None and msg.startswith("Stream info:"):
+                fps = msg.split('Frame rate:')[-1].strip().split(' ')[0]
+            elif msg == '':  # end of a track block
+                if track_meta:
+                    meta.append(track_meta)
+                    track_meta = None
+        with open(meta_fp, 'wt') as metafile:
+            metafile.write(os.linesep().join(meta))
         
         # use eac3to to 
         to_merge_sub = []

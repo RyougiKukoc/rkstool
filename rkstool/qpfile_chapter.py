@@ -17,7 +17,7 @@ def GCFQP(
     tmp_mkv_fp = '_GCFQP_tmp.mkv'
     tmp_xml_fp = '_GCFQP_tmp.xml'
     p = sp.Popen([mkvmerge_fp, '-o', tmp_mkv_fp, vcfile])
-    r = p.communicate()
+    _ = p.communicate()
     with open(tmp_xml_fp, 'w') as xmlf:
         p = sp.Popen([ffprobe_fp, 
             '-hide_banner', 
@@ -27,7 +27,7 @@ def GCFQP(
             '-of', 'xml', 
             '-select_streams', 'v:0', 
             '-i', tmp_mkv_fp], stdout=xmlf)
-        r = p.communicate()
+        _ = p.communicate()
 
     frames = xet.parse(tmp_xml_fp).getroot()[0]
     
@@ -55,7 +55,7 @@ def GCFQP(
         chapter += f'CHAPTER{cid:02}NAME=' + '\n'
         
     with open(output_chapter, "w") as f:
-        f.write(chapter)
+        _ = f.write(chapter)
     
     w = int(frames[0].attrib['width'])
     h = int(frames[0].attrib['height'])

@@ -1,13 +1,14 @@
 import os
 import glob
+import shutil
 import librosa
 import subprocess as sp
 from .qpfile_chapter import GCFQP
 
 
 encdict = {'.hevc': 'x265', '.264': 'x264', '.avc': 'x264'}
-# _eac3to_fp = 'eac3to'
 _ffprobe_fp = 'ffprobe'
+_ffmpeg_fp = 'ffmpeg'
 _tsmuxer_fp = 'tsmuxer'
 _mkvmerge_fp = 'mkvmerge'
 
@@ -41,6 +42,7 @@ def dfs(
         busy_fp = vc_fp + '.busy'
         break_fp = vc_fp + '.break'
         meta_fp = '_demux.meta'
+        demux_fp = os.path.join(mux_path, '_tsmuxer_demux')
         if ext not in ['.m2ts']:
             continue
         if not os.path.exists(vc_fp):
@@ -59,16 +61,19 @@ def dfs(
         track_meta = None
         tid = []
         fps = None
+        num_a, num_s = 0, 0
         for msg in r[0].decode().splitlines():
             if msg.startswith("Track ID:"):
                 tid.append(msg[9:].strip())
             elif msg.startswith("Stream ID:"):
                 code = msg[10:].strip()
                 if code.startswith('V'):
-                    tid.pop()
+                    _ = tid.pop()
                 elif code.startswith('A'):
+                    num_a += 1
                     track_meta = r'{}, "{}", track={}'.format(code, tar_fp, tid[-1])
                 else:
+                    num_s += 1
                     track_meta = r'{}, "{}", fps={}, track={}'.format(code, tar_fp, fps, tid[-1])
             elif msg.startswith("Stream delay:"):
                 timeshift = msg[13:].strip()
@@ -81,22 +86,9 @@ def dfs(
                     meta.append(track_meta)
                     track_meta = None
         with open(meta_fp, 'wt') as metafile:
-            metafile.write(os.linesep().join(meta))
+            _ = metafile.write(os.linesep.join(meta))
         
-        # use eac3to to 
-        to_merge_sub = []
-        to_merge_aud = []
-        eac3to_cmd = [_eac3to_fp, fn]
-        for id, track in enumerate(media, 1):
-            if track == 'a':
-                # aud_fp = os.path.join(mux_path, f'_mux_{id}a.flac')
-                eac3to_cmd += [f'{id}:', f'_mux_{id}a.flac']
-            elif track == 's':
-                # sub_fp = os.path.join(mux_path, f'_mux_{id}s.sup')
-                eac3to_cmd += [f'{id}:', f'_mux_{id}s.sup']
-                to_merge_sub += [f'_mux_{id}s.sup']
-        eac3to_cmd += ['-log=NUL']
-        p = sp.Popen(eac3to_cmd)
+        p = sp.Popen([_tsmuxer_fp, meta_fp, demux_fp])
         r = p.communicate()
 
         # check audio dupe
@@ -119,16 +111,14 @@ def dfs(
         w, h =  GCFQP(vc_fp, qp_fp, chap_fp, _ffprobe_fp, _mkvmerge_fp)
 
         mkv_fp = os.path.join(mux_path, name + f' (BD {w}x{h} {enc}')
-        num_a = len(to_merge_aud)
-        num_s = len(to_merge_sub)
         if num_a > 1:
             mkv_fp += f' FLACx{num_a}'
         elif num_a == 1:
-            mkv_fp += f' FLAC'
+            mkv_fp += ' FLAC'
         if num_s > 1:
             mkv_fp += f' SUPx{num_s}'
         elif num_s == 1:
-            mkv_fp += f' SUP'
+            mkv_fp += ' SUP'
         mkv_fp += ').mkv'
         mkvmerge_cmd = [_mkvmerge_fp, '-o', mkv_fp, vc_fp]
         mkvmerge_cmd += ['--generate-chapters-name-template', '', '--chapters', chap_fp]
@@ -139,14 +129,8 @@ def dfs(
         p = sp.Popen(mkvmerge_cmd)
         r = p.communicate()
 
-        for id, track in enumerate(media, 1):
-            if track == 'a':
-                # aud_fp = os.path.join(mux_path, f'_mux_{id}a.flac')
-                os.remove(f'_mux_{id}a.flac')
-            elif track == 's':
-                # sub_fp = os.path.join(mux_path, f'_mux_{id}s.sup')
-                os.remove(f'_mux_{id}s.sup')
         os.remove(meta_fp)
+        shutil.rmtree(demux_fp)
 
 
 def mux_bd(

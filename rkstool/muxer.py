@@ -118,6 +118,9 @@ def dfs(
                 this_aud = load_audio(flac_fp)
                 if last_aud.shape == this_aud.shape:
                     if np.allclose(last_aud, this_aud):
+                        if keeptrack:
+                            with open(flac_fp + '.dupe', 'wt') as dupefile:
+                                _ = dupefile.write('This file is the same as last track.')
                         continue
                 to_merge_aud.append(flac_fp)
                 last_aud = this_aud

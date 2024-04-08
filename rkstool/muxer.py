@@ -80,12 +80,11 @@ def dfs(
         # demux and transcode to flac using eac3to
         eac3to_cmd = [_eac3to_fp, fn]
         for tid, track in enumerate(media, 1):
-            if track != 'v':
-                eac3to_cmd.append(f'{tid}:')
+            if track == 'v':
+                continue
             track_ext = ".flac" if track == "a" else ".sup"
-            eac3to_cmd.append(str(tid) + track_ext)
-        eac3to_cmd.append(f'-destpath="{name}.demux/"')
-        eac3to_cmd.append('-log=NUL')
+            eac3to_cmd += [f'{tid}:', str(tid) + track_ext]
+        eac3to_cmd += ['-destpath=', f'{name}.demux/']
         p = sp.Popen(eac3to_cmd)
         _ = p.communicate()
         

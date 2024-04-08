@@ -43,7 +43,7 @@ def dfs(
         chap_fp = os.path.join(mux_path, name + '.chapter.txt')
         busy_fp = vc_fp + '.busy'
         break_fp = vc_fp + '.break'
-        meta_fp = '_demux.meta'
+
         if ext not in ['.m2ts']:
             continue
         if not os.path.exists(vc_fp):
@@ -62,67 +62,51 @@ def dfs(
                 shutil.rmtree(demux_fp)
             else:
                 os.remove(demux_fp)
+        os.makedirs(demux_fp)
+        
         p = sp.Popen([_tsmuxer_fp, tar_fp], stdout=sp.PIPE, stderr=sp.PIPE)
         r = p.communicate()
-        meta = ["MUXOPT --no-pcr-on-video-pid --new-audio-pes --demux --vbr --vbv-len=500"]
-        track_meta = None
-        tid = []
-        fps = None
+        media = ''
         for msg in r[0].decode().splitlines():
-            if msg.startswith("Track ID:"):
-                tid.append(msg[9:].strip())
-            elif msg.startswith("Stream ID:"):
+            if msg.startswith("Stream ID:"):
                 code = msg[10:].strip()
                 if code.startswith('V'):
-                    _ = tid.pop()
+                    media += 'v'
                 elif code.startswith('A'):
-                    track_meta = r'{}, "{}", track={}'.format(code, tar_fp, tid[-1])
+                    media += 'a'
                 else:
-                    track_meta = r'{}, "{}", fps={}, track={}'.format(code, tar_fp, fps, tid[-1])
-            elif msg.startswith("Stream delay:"):
-                timeshift = msg[13:].strip()
-                if track_meta:
-                    track_meta += f', timeshift={timeshift}ms'
-            elif fps is None and msg.startswith("Stream info:"):
-                fps = msg.split('Frame rate:')[-1].strip().split(' ')[0]
-            elif msg == '':  # end of a track block
-                if track_meta:
-                    meta.append(track_meta)
-                    track_meta = None
-        with open(meta_fp, 'wt') as metafile:
-            _ = metafile.write(os.linesep.join(meta))
-        
-        p = sp.Popen([_tsmuxer_fp, meta_fp, demux_fp])
-        r = p.communicate()
+                    media == 's'
 
+        # demux and transcode to flac using eac3to
+        eac3to_cmd = [_eac3to_fp, fn, f'-destpath="{name}.demux/"', '-log=NUL']
+        for tid, track in enumerate(media, 1):
+            if track != 'v':
+                eac3to_cmd.append(f'{tid}:')
+            track_ext = ".flac" if track == "a" else ".sup"
+            eac3to_cmd.append(str(tid) + track_ext)
+        p = sp.Popen(eac3to_cmd)
+        _ = p.communicate()
+        
         # check audio dupe
-        to_merge_aud, to_merge_sub = [], []
         last_aud, this_aud = None, None
-        demux_list = os.listdir(demux_fp)
-        for id in tid:
-            track_fp = None
-            for fn in demux_list:
-                if f'track_{id}' in fn:
-                    track_fp = os.path.join(demux_fp, fn)
-                    break
-            if track_fp.endswith('.sup'):
-                to_merge_sub.append()
-                continue
-            flac_fp = os.path.splitext(track_fp)[0] + '.flac'
-            p = sp.Popen([_eac3to_fp, track_fp, flac_fp])
-            r = p.communicate()
-            if len(to_merge_aud) == 0:
-                to_merge_aud.append(flac_fp)
-                last_aud = load_audio(flac_fp)
-            else:
-                this_aud = load_audio(flac_fp)
-                if last_aud.shape == this_aud.shape:
-                    if np.allclose(last_aud, this_aud):
-                        with open(flac_fp + '.dupe', 'wt') as dupefile:
-                            _ = dupefile.write('This file is the same as last track.')
-                        continue
-                to_merge_aud.append(flac_fp)
-                last_aud = this_aud
+        to_merge_aud, to_merge_sub = [], []
+        for tid, track in enumerate(media, 1):
+            if track == 's':
+                to_merge_sub.append(os.path.join(demux_fp, f'{tid}.sup'))
+            elif track == 'a':
+                flac_fp = os.path.join(demux_fp, f'{tid}.flac')
+                if len(to_merge_aud) == 0:
+                    to_merge_aud.append(flac_fp)
+                    last_aud = load_audio(flac_fp)
+                else:
+                    this_aud = load_audio(flac_fp)
+                    if last_aud.shape == this_aud.shape:
+                        if np.allclose(last_aud, this_aud):
+                            with open(flac_fp + '.dupe', 'wt') as dupefile:
+                                _ = dupefile.write('This file is the same as last track.')
+                            continue
+                    to_merge_aud.append(flac_fp)
+                    last_aud = this_aud
 
         # generate pts chapter from qpfile
         w, h =  GCFQP(vc_fp, qp_fp, chap_fp, _ffprobe_fp, _mkvmerge_fp)
@@ -146,10 +130,16 @@ def dfs(
         for sub in to_merge_sub:
             mkvmerge_cmd += [sub]
         p = sp.Popen(mkvmerge_cmd)
-        r = p.communicate()
+        _ = p.communicate()
 
-        os.remove(meta_fp)
-        if not keeptrack:
+        if keeptrack:
+            p = sp.Popen([_eac3to_fp, fn, f'-destpath="{name}.demux/"', '-log=NUL', '-demux'])
+            _ = p.communicate()
+            for tid, track in enumerate(media, 1):
+                if track == 'v':
+                    for v_fp in glob.glob(os.path.join(glob.escape(demux_fp), name + f' - {tid}*')):
+                        os.remove(v_fp)
+        else:
             shutil.rmtree(demux_fp)
 
 

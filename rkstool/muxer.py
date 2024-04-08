@@ -3,12 +3,13 @@ import glob
 import shutil
 import librosa
 import subprocess as sp
+import numpy as np
 from .qpfile_chapter import GCFQP
 
 
 encdict = {'.hevc': 'x265', '.264': 'x264', '.avc': 'x264'}
 _ffprobe_fp = 'ffprobe'
-_ffmpeg_fp = 'ffmpeg'
+_eac3to_fp = 'eac3to'
 _tsmuxer_fp = 'tsmuxer'
 _mkvmerge_fp = 'mkvmerge'
 
@@ -21,6 +22,7 @@ def dfs(
     mux_path: str,
     recursion: bool = True, 
     vc_ext: str = '.hevc',
+    keeptrack: bool = False,
 ):
     enc = encdict[vc_ext]
     mux_path = os.path.abspath(mux_path)
@@ -34,7 +36,7 @@ def dfs(
                     vc_ext=vc_ext,
                 )
             continue
-        os.chdir(mux_path)  # len(path) problem in eac3to
+        os.chdir(mux_path)
         name, ext = os.path.splitext(fn)
         vc_fp = os.path.join(mux_path, name + vc_ext)
         qp_fp = os.path.join(mux_path, name + '.qpfile')
@@ -42,7 +44,6 @@ def dfs(
         busy_fp = vc_fp + '.busy'
         break_fp = vc_fp + '.break'
         meta_fp = '_demux.meta'
-        demux_fp = os.path.join(mux_path, '_tsmuxer_demux')
         if ext not in ['.m2ts']:
             continue
         if not os.path.exists(vc_fp):
@@ -55,6 +56,12 @@ def dfs(
             continue
         
         # use tsmuxer to fetch stream info
+        demux_fp = os.path.join(mux_path, name + '.demux')
+        if os.path.exists(demux_fp):
+            if os.path.isdir(demux_fp):
+                shutil.rmtree(demux_fp)
+            else:
+                os.remove(demux_fp)
         p = sp.Popen([_tsmuxer_fp, tar_fp], stdout=sp.PIPE, stderr=sp.PIPE)
         r = p.communicate()
         meta = ["MUXOPT --no-pcr-on-video-pid --new-audio-pes --demux --vbr --vbv-len=500"]
@@ -90,6 +97,7 @@ def dfs(
 
         # check audio dupe
         to_merge_aud, to_merge_sub = [], []
+        last_aud, this_aud = None, None
         demux_list = os.listdir(demux_fp)
         for id in tid:
             track_fp = None
@@ -99,22 +107,18 @@ def dfs(
                     break
             if track_fp.endswith('.sup'):
                 to_merge_sub.append()
-            
-
-        for id, track in enumerate(media, 1):
-            if track == 'a':
-                # aud_fp = os.path.join(mux_path, f'_mux_{id}a.flac')
-                aud_fp = f'_mux_{id}a.flac'
-                if len(to_merge_aud) == 0:
-                    to_merge_aud += [aud_fp]
-                    last_aud = load_audio(aud_fp)
-                    continue
-                this_aud = load_audio(aud_fp)
+                continue
+            flac_fp = os.path.splitext(track_fp)[0] + '.flac'
+            p = sp.Popen([_eac3to_fp, track_fp, flac_fp])
+            if len(to_merge_aud) == 0:
+                to_merge_aud.append(flac_fp)
+                last_aud = load_audio(flac_fp)
+            else:
+                this_aud = load_audio(flac_fp)
                 if last_aud.shape == this_aud.shape:
-                    if ((last_aud - this_aud) ** 2).mean() < 1e-8:
-                        continue
-                to_merge_aud += [aud_fp]
-                last_aud = this_aud
+                    if not np.allclose(last_aud, this_aud):
+                        to_merge_aud.append(flac_fp)
+                        last_aud = this_aud
 
         # generate pts chapter from qpfile
         w, h =  GCFQP(vc_fp, qp_fp, chap_fp, _ffprobe_fp, _mkvmerge_fp)
@@ -141,13 +145,15 @@ def dfs(
         r = p.communicate()
 
         os.remove(meta_fp)
-        shutil.rmtree(demux_fp)
+        if not keeptrack:
+            shutil.rmtree(demux_fp)
 
 
 def mux_bd(
     mux_path: str,
     recursion: bool = True, 
     vc_ext: str = '.hevc',
+    keeptrack: bool = False,  # whether to keep the demux audio & sub tracks
     eac3to_fp: str = None,
     ffprobe_fp: str = None,
     tsmuxer_fp: str = None,
@@ -165,4 +171,4 @@ def mux_bd(
     if mkvmerge_fp is not None:
         global _mkvmerge_fp
         _mkvmerge_fp = mkvmerge_fp
-    dfs(mux_path, recursion, vc_ext)
+    dfs(mux_path, recursion, vc_ext, keeptrack)

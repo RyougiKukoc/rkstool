@@ -117,9 +117,10 @@ def dfs(
             else:
                 this_aud = load_audio(flac_fp)
                 if last_aud.shape == this_aud.shape:
-                    if not np.allclose(last_aud, this_aud):
-                        to_merge_aud.append(flac_fp)
-                        last_aud = this_aud
+                    if np.allclose(last_aud, this_aud):
+                        continue
+                to_merge_aud.append(flac_fp)
+                last_aud = this_aud
 
         # generate pts chapter from qpfile
         w, h =  GCFQP(vc_fp, qp_fp, chap_fp, _ffprobe_fp, _mkvmerge_fp)

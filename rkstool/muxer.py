@@ -110,6 +110,7 @@ def dfs(
                 continue
             flac_fp = os.path.splitext(track_fp)[0] + '.flac'
             p = sp.Popen([_eac3to_fp, track_fp, flac_fp])
+            r = p.communicate()
             if len(to_merge_aud) == 0:
                 to_merge_aud.append(flac_fp)
                 last_aud = load_audio(flac_fp)

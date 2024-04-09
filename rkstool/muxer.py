@@ -138,7 +138,7 @@ def dfs(
         _ = p.communicate()
 
         if keeptrack:
-            p = sp.Popen([_eac3to_fp, fn, f'-destpath="{name}.demux/"', '-log=NUL', '-demux'])
+            p = sp.Popen([_eac3to_fp, fn, '-destpath=', f'{name}.demux/', '-log=NUL', '-demux'])
             _ = p.communicate()
             for tid, track in enumerate(media, 1):
                 if track == 'v':

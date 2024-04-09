@@ -63,7 +63,7 @@ def dfs(
         os.makedirs(demux_fp)
         
         media = ''
-        p = sp.Popen([_eac3to_fp, tar_fp, '-log=', '_eac3to_analyze.txt'])
+        p = sp.Popen([_eac3to_fp, tar_fp, '-log=_eac3to_analyze.txt'])
         _ = p.communicate()
         with open('_eac3to_analyze.txt', 'rt') as analyzefile:
             msgs = analyzefile.readlines()

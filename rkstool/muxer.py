@@ -80,6 +80,7 @@ def dfs(
             else:
                 media += 'v'
             tid += 1
+        os.remove('_eac3to_analyze.txt')
 
         # demux and transcode to flac using eac3to
         eac3to_cmd = [_eac3to_fp, fn]
@@ -138,7 +139,7 @@ def dfs(
         _ = p.communicate()
 
         if keeptrack:
-            p = sp.Popen([_eac3to_fp, fn, '-destpath=', f'{name}.demux/', '-log=NUL', '-demux'])
+            p = sp.Popen([_eac3to_fp, fn, '-demux', '-destpath=', f'{name}.demux/'])
             _ = p.communicate()
             for tid, track in enumerate(media, 1):
                 if track == 'v':

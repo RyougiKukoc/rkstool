@@ -10,7 +10,6 @@ from .qpfile_chapter import GCFQP
 encdict = {'.hevc': 'x265', '.264': 'x264', '.avc': 'x264'}
 _ffprobe_fp = 'ffprobe'
 _eac3to_fp = 'eac3to'
-_tsmuxer_fp = 'tsmuxer'
 _mkvmerge_fp = 'mkvmerge'
 
 
@@ -55,7 +54,6 @@ def dfs(
         if len(glob.glob(os.path.join(glob.escape(mux_path), name + '*.mkv'))) > 0:
             continue
         
-        # use tsmuxer to fetch stream info
         demux_fp = os.path.join(mux_path, name + '.demux')
         if os.path.exists(demux_fp):
             if os.path.isdir(demux_fp):
@@ -64,23 +62,29 @@ def dfs(
                 os.remove(demux_fp)
         os.makedirs(demux_fp)
         
-        p = sp.Popen([_tsmuxer_fp, tar_fp], stdout=sp.PIPE, stderr=sp.PIPE)
-        r = p.communicate()
         media = ''
-        for msg in r[0].decode().splitlines():
-            if msg.startswith("Stream ID:"):
-                code = msg[10:].strip()
-                if code.startswith('V'):
-                    media += 'v'
-                elif code.startswith('A'):
-                    media += 'a'
-                else:
-                    media == 's'
+        p = sp.Popen([_eac3to_fp, tar_fp, '-log=', '_eac3to_analyze.txt'])
+        _ = p.communicate()
+        with open('_eac3to_analyze.txt', 'rt') as analyzefile:
+            msgs = analyzefile.readlines()
+        tid = 1
+        for msg in msgs:
+            if not msg.startswith(str(tid) + ':'):
+                continue
+            if 'ubtitle' in msg:  # must be subtitle
+                media += 's'
+            elif 'hannel' in msg:  # must be audio
+                media += 'a'
+            elif 'hapter' in msg:  # must be chapter
+                media += 'c'
+            else:
+                media += 'v'
+            tid += 1
 
         # demux and transcode to flac using eac3to
         eac3to_cmd = [_eac3to_fp, fn]
         for tid, track in enumerate(media, 1):
-            if track == 'v':
+            if track in ['v', 'c']:
                 continue
             track_ext = ".flac" if track == "a" else ".sup"
             eac3to_cmd += [f'{tid}:', str(tid) + track_ext]
@@ -151,7 +155,6 @@ def mux_bd(
     keeptrack: bool = False,  # whether to keep the demux audio & sub tracks
     eac3to_fp: str = None,
     ffprobe_fp: str = None,
-    tsmuxer_fp: str = None,
     mkvmerge_fp: str = None,
 ):
     if eac3to_fp is not None:
@@ -160,9 +163,6 @@ def mux_bd(
     if ffprobe_fp is not None:
         global _ffprobe_fp
         _ffprobe_fp = ffprobe_fp
-    if tsmuxer_fp is not None:
-        global _tsmuxer_fp
-        _tsmuxer_fp = tsmuxer_fp
     if mkvmerge_fp is not None:
         global _mkvmerge_fp
         _mkvmerge_fp = mkvmerge_fp

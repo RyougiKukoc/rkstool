@@ -63,8 +63,7 @@ def dfs(
         os.makedirs(demux_fp)
         
         media = ''
-        p = sp.Popen([_eac3to_fp, tar_fp, '-log=_eac3to_analyze.txt'])
-        _ = p.communicate()
+        _ = sp.run(f'"{_eac3to_fp}" "{fn}" -log=_eac3to_analyze.txt')
         with open('_eac3to_analyze.txt', 'rt') as analyzefile:
             msgs = analyzefile.readlines()
         tid = 1
@@ -83,15 +82,14 @@ def dfs(
         os.remove('_eac3to_analyze.txt')
 
         # demux and transcode to flac using eac3to
-        eac3to_cmd = [_eac3to_fp, fn]
+        eac3to_cmd = f'"{_eac3to_fp}" "{fn}" '
         for tid, track in enumerate(media, 1):
             if track in ['v', 'c']:
                 continue
             track_ext = ".flac" if track == "a" else ".sup"
-            eac3to_cmd += [f'{tid}:', str(tid) + track_ext]
-        eac3to_cmd += ['-destpath=', f'{name}.demux/']
-        p = sp.Popen(eac3to_cmd)
-        _ = p.communicate()
+            eac3to_cmd += f'{tid}: {tid}{track_ext} '
+        eac3to_cmd += f'-destpath="{name}.demux/"'
+        _ = sp.run(eac3to_cmd)
         
         # check audio dupe
         last_aud, this_aud = None, None
@@ -139,8 +137,7 @@ def dfs(
         _ = p.communicate()
 
         if keeptrack:
-            p = sp.Popen([_eac3to_fp, fn, '-demux', '-destpath=', f'{name}.demux/'])
-            _ = p.communicate()
+            _ = sp.run(f'"{_eac3to_fp}" "{fn}" -demux -destpath="{name}.demux/"')
             for tid, track in enumerate(media, 1):
                 if track == 'v':
                     for v_fp in glob.glob(os.path.join(glob.escape(demux_fp), name + f' - {tid}*')):

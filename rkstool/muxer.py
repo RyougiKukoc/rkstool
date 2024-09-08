@@ -24,13 +24,20 @@ def flac_with_eac3to(src_fn, dst_fn, shift):
     shift = int(shift)
     flac_cmd = f'"{g_eac3to_fp}" "{src_fn}" "{dst_fn}"'
     if shift != 0:
-        flac_cmd.append(f' {shift:+d}ms')
+        flac_cmd += f' {shift:+d}ms'
     _ = sp.run(flac_cmd)
 
 
-def flac_with_ffmpeg(src_fp, dst_fp):
+def flac_with_ffmpeg(src_fp, dst_fp, shift):
     global g_ffmpeg_fp
-    _ = sp.run([g_ffmpeg_fp, src_fp, dst_fp])
+    shift = int(shift)
+    flac_cmd = [g_ffmpeg_fp, '-i', src_fp]
+    if shift > 0:
+        flac_cmd += ['-af', f'adelay={shift}']
+    elif shift < 0:
+        flac_cmd += ['-ss', str(-shift/1000)]
+    flac_cmd += ['-y', dst_fp]
+    _ = sp.run(flac_cmd)
 
 
 def demux_with_eac3to(fn, demux_fp, keeptrack):
@@ -150,7 +157,7 @@ def demux_with_tsmuxer(tar_fp, demux_fp, converter):
                 track_fp = os.path.join(demux_fp, fn)
                 break
         if track_fp.endswith('.sup'):
-            to_merge_sub.append([track_fp, shift])
+            to_merge_sub.append(track_fp)
             continue
         flac_fp = os.path.splitext(track_fp)[0] + '.flac'
         if converter == 'eac3to':
@@ -160,7 +167,7 @@ def demux_with_tsmuxer(tar_fp, demux_fp, converter):
             flac_with_eac3to(track_fn, flac_fn, shift)
             os.chdir(os.path.dirname(tar_fp))
         else:
-            flac_with_ffmpeg(track_fp, flac_fp)
+            flac_with_ffmpeg(track_fp, flac_fp, shift)
         if len(to_merge_aud) == 0:
             to_merge_aud.append(flac_fp)
             last_aud = load_audio(flac_fp)
@@ -171,13 +178,13 @@ def demux_with_tsmuxer(tar_fp, demux_fp, converter):
                     with open(flac_fp + '.dupe', 'wt') as dupefile:
                         _ = dupefile.write('This file is the same as last track.')
                     continue
-            to_merge_aud.append([flac_fp, int(shift)])
+            to_merge_aud.append(flac_fp)
             last_aud = this_aud
     
     return to_merge_aud, to_merge_sub
 
 
-def mux_mkv(mux_path, name, w, h, vc_ext, vc_fp, to_merge_aud, to_merge_sub, chap_fp, noshift):
+def mux_mkv(mux_path, name, w, h, vc_ext, vc_fp, to_merge_aud, to_merge_sub, chap_fp):
     global g_mkvmerge_fp, encdict
     mkv_fp = os.path.join(mux_path, name + f' (BD {w}x{h} {encdict[vc_ext]}')
     num_a = len(to_merge_aud)
@@ -193,13 +200,9 @@ def mux_mkv(mux_path, name, w, h, vc_ext, vc_fp, to_merge_aud, to_merge_sub, cha
     mkv_fp += ').mkv'
     mkvmerge_cmd = [g_mkvmerge_fp, '-o', mkv_fp, vc_fp]
     mkvmerge_cmd += ['--generate-chapters-name-template', '', '--chapters', chap_fp]
-    for aud, shift in to_merge_aud:
-        if noshift and shift is not None:
-            mkvmerge_cmd += ['-y', '0:shift']
+    for aud in to_merge_aud:
         mkvmerge_cmd.append(aud)
-    for sub, shift in to_merge_sub:
-        if shift is not None:
-            mkvmerge_cmd += ['-y', '0:shift']
+    for sub in to_merge_sub:
         mkvmerge_cmd.append(sub)
     _ = sp.run(mkvmerge_cmd)
 
@@ -215,6 +218,9 @@ def dfs(mux_path, keeptrack, vc_ext, demuxer, converter, recursion):
                     mux_path=tar_fp,
                     recursion=recursion,
                     vc_ext=vc_ext,
+                    keeptrack=keeptrack,
+                    demuxer=demuxer,
+                    converter=converter,
                 )
             continue
         os.chdir(mux_path)
@@ -248,7 +254,7 @@ def dfs(mux_path, keeptrack, vc_ext, demuxer, converter, recursion):
         global g_ffprobe_fp, g_mkvmerge_fp
         qp_fp = os.path.join(mux_path, name + '.qpfile')
         chap_fp = os.path.join(mux_path, name + '.chapter.txt')
-        w, h =  GCFQP(vc_fp, qp_fp, chap_fp, g_ffprobe_fp, g_mkvmerge_fp, converter=='ffmpeg')
+        w, h =  GCFQP(vc_fp, qp_fp, chap_fp, g_ffprobe_fp, g_mkvmerge_fp)
 
         # mux
         mux_mkv(mux_path, name, w, h, vc_ext, vc_fp, to_merge_aud, to_merge_sub, chap_fp)
@@ -280,3 +286,8 @@ def mux_bd(
     demuxer = 'tsmuxer' if g_tsmuxer_fp else 'eac3to'
     converter = 'eac3to' if g_eac3to_fp else 'ffmpeg'
     dfs(mux_path, keeptrack, vc_ext, demuxer, converter, recursion)
+    g_eac3to_fp = 'eac3to'
+    g_tsmuxer_fp = 'tsmuxer'
+    g_ffmpeg_fp = 'ffmpeg'
+    g_ffprobe_fp = 'ffprobe'
+    g_mkvmerge_fp = 'mkvmerge'

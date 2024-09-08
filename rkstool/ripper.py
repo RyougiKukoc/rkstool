@@ -49,7 +49,11 @@ def dfs(
         with open(busy_fp, 'w') as busyf:
             busyf.write(f'{vc_fp} is being encoded.')
         rec_env = os.environ['PATH']
-        runpy.run_path(rpy_fp, run_name=run_name)
+        try:
+            runpy.run_path(rpy_fp, run_name=run_name)
+        except Exception as e:
+            logger.info(f"Error at {rpy_fp}:" )
+            logger.info(e)
         os.environ['PATH'] = rec_env
         if os.path.exists(busy_fp):
             os.remove(busy_fp)

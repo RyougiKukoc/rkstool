@@ -15,6 +15,6 @@ def simple_sort(tosort_fp: str, accept_ext: list = ['.m2ts']):
             n, e = os.path.splitext(tomove)
             if e not in accept_ext:
                 continue
-            query = os.path.join(tosort_fp, n + '*')
+            query = glob.escape(os.path.join(tosort_fp, n)) + '*'
             for qres in glob.glob(query):
                 shutil.move(qres, os.path.join(target_fp, os.path.basename(qres)))

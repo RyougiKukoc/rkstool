@@ -21,7 +21,7 @@ def load_audio(audio_fp):
 
 def flac_with_eac3to(src_fn, dst_fn, shift):
     global g_eac3to_fp
-    shift = int(shift)
+    shift = 0 if shift is None else int(shift)
     flac_cmd = f'"{g_eac3to_fp}" "{src_fn}" "{dst_fn}"'
     if shift != 0:
         flac_cmd += f' {shift:+d}ms'
@@ -30,7 +30,7 @@ def flac_with_eac3to(src_fn, dst_fn, shift):
 
 def flac_with_ffmpeg(src_fp, dst_fp, shift):
     global g_ffmpeg_fp
-    shift = int(shift)
+    shift = 0 if shift is None else int(shift)
     flac_cmd = [g_ffmpeg_fp, '-i', src_fp]
     if shift > 0:
         flac_cmd += ['-af', f'adelay={shift}']

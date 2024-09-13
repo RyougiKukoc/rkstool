@@ -20,7 +20,6 @@ def load_audio(audio_fp):
 
 
 def flac_with_eac3to(src_fn, dst_fn, shift):
-    global g_eac3to_fp
     shift = 0 if shift is None else int(shift)
     flac_cmd = f'"{g_eac3to_fp}" "{src_fn}" "{dst_fn}"'
     if shift != 0:
@@ -29,7 +28,6 @@ def flac_with_eac3to(src_fn, dst_fn, shift):
 
 
 def flac_with_ffmpeg(src_fp, dst_fp, shift):
-    global g_ffmpeg_fp
     shift = 0 if shift is None else int(shift)
     flac_cmd = [g_ffmpeg_fp, '-i', src_fp]
     if shift > 0:
@@ -41,10 +39,8 @@ def flac_with_ffmpeg(src_fp, dst_fp, shift):
 
 
 def demux_with_eac3to(fn, demux_fp, keeptrack):
-    global g_eac3to_fp
-    name, ext = os.path.splitext(fn)
-    
     # get track info from eac3to logfile
+    name, ext = os.path.splitext(fn)
     media = ''
     _ = sp.run(f'"{g_eac3to_fp}" "{fn}" -log=_eac3to_analyze.txt')
     with open('_eac3to_analyze.txt', 'rt') as analyzefile:
@@ -108,8 +104,6 @@ def demux_with_eac3to(fn, demux_fp, keeptrack):
 
 
 def demux_with_tsmuxer(tar_fp, demux_fp, converter):
-    global g_tsmuxer_fp
-    
     # get track info and write meta file
     meta_fp = '_demux.meta'
     meta = ["MUXOPT --no-pcr-on-video-pid --new-audio-pes --demux --vbr --vbv-len=500"]
@@ -185,7 +179,6 @@ def demux_with_tsmuxer(tar_fp, demux_fp, converter):
 
 
 def mux_mkv(mux_path, name, w, h, vc_ext, vc_fp, to_merge_aud, to_merge_sub, chap_fp):
-    global g_mkvmerge_fp, encdict
     mkv_fp = os.path.join(mux_path, name + f' (BD {w}x{h} {encdict[vc_ext]}')
     num_a = len(to_merge_aud)
     num_s = len(to_merge_sub)
@@ -251,7 +244,6 @@ def dfs(mux_path, keeptrack, vc_ext, demuxer, converter, recursion):
             to_merge_aud, to_merge_sub = demux_with_tsmuxer(tar_fp, demux_fp, converter)
 
         # generate pts chapter from qpfile
-        global g_ffprobe_fp, g_mkvmerge_fp
         qp_fp = os.path.join(mux_path, name + '.qpfile')
         chap_fp = os.path.join(mux_path, name + '.chapter.txt')
         w, h =  GCFQP(vc_fp, qp_fp, chap_fp, g_ffprobe_fp, g_mkvmerge_fp)

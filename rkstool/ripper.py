@@ -101,7 +101,8 @@ def rip(
     num_redo: int = 1,
     multi_task: bool = False,
 ):
-    assert type(num_redo) == int
+    assert isinstance(num_redo, int)
+    path_record = os.path.abspath('.')
     rip_path = os.path.abspath(rip_path)
     if logger_fp is None:
         time_idx = datetime.datetime.now().strftime(r'%Y%m%d%H%M%S')
@@ -132,3 +133,4 @@ def rip(
             logger=logger,
         )
     logger.info('Done.')
+    os.chdir(path_record)

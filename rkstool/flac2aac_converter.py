@@ -94,6 +94,7 @@ def flac2aac(
     qaac_fp = None,
 ):
     global g_mkvinfo_fp, g_mkvmerge_fp, g_mkvextract_fp, g_qaac_fp
+    path_record = os.path.abspath('.')
     g_mkvinfo_fp = shutil.which(mkvinfo_fp or g_mkvinfo_fp)
     g_mkvmerge_fp = shutil.which(mkvmerge_fp or g_mkvmerge_fp)
     g_mkvextract_fp = shutil.which(mkvextract_fp or g_mkvextract_fp)
@@ -113,4 +114,5 @@ def flac2aac(
     g_mkvmerge_fp = 'mkvmerge'
     g_mkvextract_fp = 'mkvextract'
     g_qaac_fp = 'qaac'
+    os.chdir(path_record)
     

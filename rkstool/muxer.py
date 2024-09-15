@@ -268,6 +268,7 @@ def mux_bd(
     mkvmerge_fp: str = None,
 ):
     global g_eac3to_fp, g_tsmuxer_fp, g_ffmpeg_fp, g_ffprobe_fp, g_mkvmerge_fp
+    path_record = os.path.abspath('.')
     g_eac3to_fp = shutil.which(eac3to_fp or g_eac3to_fp)
     g_tsmuxer_fp = shutil.which(tsmuxer_fp or g_tsmuxer_fp)
     g_ffmpeg_fp = shutil.which(ffmpeg_fp or g_ffmpeg_fp)
@@ -283,3 +284,5 @@ def mux_bd(
     g_ffmpeg_fp = 'ffmpeg'
     g_ffprobe_fp = 'ffprobe'
     g_mkvmerge_fp = 'mkvmerge'
+    os.chdir(path_record)
+    

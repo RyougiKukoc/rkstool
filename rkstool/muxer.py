@@ -225,7 +225,7 @@ def dfs(mux_path, keeptrack, vc_ext, demuxer, converter, recursion):
             continue
         if os.path.exists(vc_fp + '.break') or os.path.exists(vc_fp + '.busy'):
             continue
-        if len(glob.glob(os.path.join(glob.escape(mux_path), name + '*.mkv'))) > 0:
+        if len(glob.glob(glob.escape(os.path.join(mux_path, name)) + '*.mkv')) > 0:
             continue
         
         # create demux folder

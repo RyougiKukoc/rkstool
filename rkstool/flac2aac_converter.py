@@ -71,7 +71,7 @@ def flac_to_aac(
         if aid in keep_aids:
             merge_cmd.append(f'_tmp_{aid}.flac')
         else:
-            _ = sp.run([g_qaac_fp, '-o', f'_tmp_{aid}.aac', '-V', '127', f'_tmp_{aid}.flac'])
+            _ = sp.run([g_qaac_fp, '-o', f'_tmp_{aid}.aac', '-V', '127', '--no-delay', f'_tmp_{aid}.flac'])
             merge_cmd.append(f'_tmp_{aid}.aac')
     _ = sp.run(merge_cmd)
     for aid in aids:

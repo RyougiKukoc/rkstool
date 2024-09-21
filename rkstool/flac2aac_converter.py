@@ -42,9 +42,9 @@ def flac_to_aac(
             elif line.startswith('|  + Codec ID: ') and 'A_FLAC' not in line:
                 return
             elif line.startswith('|  + Language: '):
-                lan = line.lstrip('|  + Language: ').rstrip()
+                lan = line[15:].rstrip()
             elif line.startswith('|  + Name: '):
-                tn = line.lstrip('|  + Name: ').rstrip()
+                tn = line[11:].rstrip()
     if len(keep_flac_tracks) >= len(aids):
         return
     src_audstr = 'FLAC' if len(aids) == 1 else 'FLACx' + str(len(aids))

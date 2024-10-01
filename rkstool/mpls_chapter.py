@@ -182,7 +182,17 @@ def parse_mpls(mpls: str, streams: Dict[str, StreamInfo]) -> None:
             # Check if it contains a valid first-track video
             fskip(2)
             FileName = f.read(5).decode()
-            fskip(27)
+            fskip(5)
+            IsMultiAngle = fget(1) >> 4 & 1
+            fskip(21)
+            if IsMultiAngle:
+                NumberOfAngles = fget(1)
+                fskip(1)
+                for i in range(1, NumberOfAngles):
+                    fskip(10)
+                    # FileName = f.read(5).decode()
+                    # fskip(4)
+                    # RefToSTCID = fget(1)
             # Enter STN table
             STN_Length = fget(2)
             STN_Start = f.tell()

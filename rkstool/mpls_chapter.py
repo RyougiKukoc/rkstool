@@ -157,7 +157,11 @@ class StreamInfo:
         return time_to_chapter_xml(mil_strs, language)
 
 
-def parse_mpls(mpls: str, streams: Dict[str, StreamInfo]) -> None:
+def parse_mpls(
+    mpls: str, 
+    streams: Dict[str, StreamInfo],
+    debug_info: List[str] = None,
+) -> None:
     ''' Read a MPLS file and save timestamps in entries of streams
         Reference: https://github.com/lw/BluRay/wiki/MPLS
     '''
@@ -182,6 +186,8 @@ def parse_mpls(mpls: str, streams: Dict[str, StreamInfo]) -> None:
             # Check if it contains a valid first-track video
             fskip(2)
             FileName = f.read(5).decode()
+            if debug_info is not None:
+                debug_info.append(FileName)
             fskip(5)
             IsMultiAngle = fget(1) >> 4 & 1
             fskip(21)

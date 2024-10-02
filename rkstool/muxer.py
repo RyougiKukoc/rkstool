@@ -29,7 +29,7 @@ def flac_with_eac3to(src_fn, dst_fn, shift):
 
 def flac_with_ffmpeg(src_fp, dst_fp, shift):
     shift = 0 if shift is None else int(shift)
-    flac_cmd = [g_ffmpeg_fp, '-i', src_fp]
+    flac_cmd = [g_ffmpeg_fp, '-i', src_fp, '-compression_level', 12]
     if shift > 0:
         flac_cmd += ['-af', f'adelay={shift}']
     elif shift < 0:

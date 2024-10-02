@@ -8,3 +8,4 @@ from .ripper import rip
 from .muxer import mux_bd
 from .flac2aac_converter import flac2aac
 from .mpls_merger import merge_mpls
+from .mkv_cutter import cut_mkv

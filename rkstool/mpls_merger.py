@@ -25,6 +25,17 @@ def mmg(mpls_fp, mkv_dir, output_dir, logger):
             logger.info(f'No matching result for "*{m2ts_fn}*.mkv", {mpls_fp} is ignored.')
             return
         mkv_list.append(mkv_matched[0])
+    
+    output_fn = 'mpls' + os.path.basename(mpls_fp)[:-5]
+    mkv_fn = os.path.basename(mkv_list[0])[:-4]
+    if mkv_fn.endswith(')'):
+        output_fn += ' (' + mkv_fn.split(')')[-2].split('(')[-1] + ')'
+    output_fn += '.mkv'
+    output_fp = os.path.join(output_dir, output_fn)
+
+    if item_count == 1:
+        shutil.copy2(mkv_list[0], output_fp)
+        return
 
     audio_count = 0
     for i, mkv_fp in enumerate(mkv_list):
@@ -55,20 +66,17 @@ def mmg(mpls_fp, mkv_dir, output_dir, logger):
     concat_cmd.append('-filter_complex')
     for i in range(audio_count):
         merged_flac_fp = os.path.join(output_dir, f'_a{i}.flac')
-        tcmd = [''.join(f'[{i}:a:1]' for i in range(item_count)) + f'concat=n={item_count}:v=0:a=1[oa]']
+        tcmd = [''.join(f'[{j}:a:{i}]' for j in range(item_count)) + f'concat=n={item_count}:v=0:a=1[oa]']
         tcmd += ['-map', '[oa]', '-compression_level', '12', merged_flac_fp]
         _ = sp.run(concat_cmd + tcmd)
     
-    output_fn = 'mpls' + os.path.basename(mpls_fp)[:-5]
-    mkv_fn = os.path.basename(mkv_list[0])[:-4]
-    if mkv_fn.endswith(')'):
-        output_fn += ' ' + mkv_fn.split(')')[-2].split('(')[-1]
-    output_fn += '.mkv'
-    append_cmd = [g_mkvmerge_fp, '-o', os.path.join(output_dir, output_fn)]
-    for i in range(audio_count):
+    append_cmd = [g_mkvmerge_fp, '-o', output_fp]
+    for i, mkv_fp in enumerate(mkv_list):
         if i > 0:
             append_cmd += ['+']
-        append_cmd += ['-A', os.path.join(output_dir, f'_a{i}.flac')]
+        append_cmd += ['-A', mkv_fp]
+    for i in range(audio_count):
+        append_cmd += [os.path.join(output_dir, f'_a{i}.flac')]
     _ = sp.run(append_cmd)
 
     for i in range(audio_count):
@@ -102,4 +110,3 @@ def merge_mpls(
         mmg(mpls_fp, mkv_dir, output_dir, logger)
     g_ffmpeg_fp = 'ffmpeg'
     g_mkvmerge_fp = 'mkvmerge'
-    

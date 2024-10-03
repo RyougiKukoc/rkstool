@@ -6,7 +6,7 @@ from typing import Union, Tuple
 
 def cut_mkv(
     src_fp: str,
-    chapters: Union[str, Tuple[int]],
+    chapters: Union[str, int, Tuple[int]],
     tar_dir: str = None,
     ffmpeg_fp: str = 'ffmpeg',
     mkvmerge_fp: str = 'mkvmerge',
@@ -47,10 +47,18 @@ def cut_mkv(
         chapter_str += 'all'
         chapters = list(range(num_chapters))
     elif hasattr(chapters, '__iter__'):
-        chapters = [num_chapters + item for item in chapters if item < 0]
-        assert all(isinstance(item, int) and item >= 0 for item in chapters)
+        chapters = [num_chapters + item if item < 0 else item for item in chapters]
+        for item in chapters:
+            if not (isinstance(item, int) and item >= 0 and item < num_chapters):
+                print(f"Invalid chapter {item}")
+                return
         chapters = sorted(list(set(chapters)))
         chapter_str += ','.join(str(item + 1) for item in chapters)  # mkvmerge counts chapters from 1
+    elif isinstance(chapters, int):
+        if chapters < 0 or chapters >= num_chapters:
+            print(f"Invalid chapter {chapter}")
+            return
+        chapters = [chapters]
     else:
         print('Unsupported chapters format: ', chapters)
         return

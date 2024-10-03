@@ -58,6 +58,7 @@ def cut_mkv(
         if chapters < 0 or chapters >= num_chapters:
             print(f"Invalid chapter {chapter}")
             return
+        chapter_str += str(chapters + 1)
         chapters = [chapters]
     else:
         print('Unsupported chapters format: ', chapters)

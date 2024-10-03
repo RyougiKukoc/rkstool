@@ -55,6 +55,8 @@ def cut_mkv(
         chapters = sorted(list(set(chapters)))
         chapter_str += ','.join(str(item + 1) for item in chapters)  # mkvmerge counts chapters from 1
     elif isinstance(chapters, int):
+        if chapters < 0:
+            chapters += num_chapters
         if chapters < 0 or chapters >= num_chapters:
             print(f"Invalid chapter {chapter}")
             return

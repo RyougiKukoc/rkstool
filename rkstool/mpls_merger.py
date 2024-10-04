@@ -26,7 +26,7 @@ def mmg(mpls_fp, mkv_dir, output_dir, logger):
             return
         mkv_list.append(mkv_matched[0])
     
-    output_fn = 'mpls' + os.path.basename(mpls_fp)[:-5]
+    output_fn = 'mpls_' + os.path.basename(mpls_fp)[:-5]
     mkv_fn = os.path.basename(mkv_list[0])[:-4]
     if mkv_fn.endswith(')'):
         output_fn += ' (' + mkv_fn.split(')')[-2].split('(')[-1] + ')'

@@ -6,8 +6,15 @@ from .mpls_chapter import read_mpls
 from .logger import get_logger
 
 
-def index(workspace_fp: str, logger_fp: str = None, ffmpeg_fp: str = None, qponly: bool = False):
+def index(
+    workspace_fp: str, 
+    qponly: bool = False,
+    logger_fp: str = None, 
+    ffmpeg_fp: str = 'ffmpeg', 
+):
     workspace_fp = os.path.abspath(workspace_fp)
+    ffmpeg_fp = shutil.which(ffmpeg_fp)
+    
     if os.path.exists(os.path.join(workspace_fp, 'BDMV', 'STREAM')):  # single volume optim
         bdid = 1
         while True:
@@ -24,8 +31,6 @@ def index(workspace_fp: str, logger_fp: str = None, ffmpeg_fp: str = None, qponl
         logger_fn = 'index.' + datetime.datetime.now().strftime(r'%Y%m%d%H%M%S') + '.log'
         logger_fp = os.path.join(workspace_fp, logger_fn)
     logger = get_logger(logger_fp)
-    if ffmpeg_fp is None:  # Already added ffmpeg in system PATH
-        ffmpeg_fp = 'ffmpeg'
 
     for bd in os.listdir(workspace_fp):
         tar_fp = os.path.join(workspace_fp, bd)

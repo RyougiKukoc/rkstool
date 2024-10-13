@@ -44,7 +44,7 @@ def time_to_chapter_ogg(time_strs: List[str]) -> str:
 def time_to_chapter_xml(time_strs: List[str], language_str: str = 'jpn') -> str:
     ''' XML stuffs (preferred)
     '''
-    return_str = f'<?xml version="1.0"?>' + '\n'
+    return_str = '<?xml version="1.0"?>' + '\n'
     return_str = return_str + r'<!-- <!DOCTYPE Chapters SYSTEM "matroskachapters.dtd"> -->' + '\n'
     return_str = return_str + r'<Chapters>' + '\n' + r'<EditionEntry>' + '\n'
     for time_str in time_strs:

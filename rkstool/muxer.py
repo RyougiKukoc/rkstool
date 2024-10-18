@@ -2,6 +2,7 @@ import os
 import glob
 import shutil
 import librosa
+import soundfile as sf
 import subprocess as sp
 import numpy as np
 from .qpfile_chapter import GCFQP
@@ -15,9 +16,26 @@ g_ffprobe_fp = 'ffprobe'
 g_mkvmerge_fp = 'mkvmerge'
 
 
-def load_audio(audio_fp):
-    return librosa.load(audio_fp, sr=None, mono=False)[0]
-
+def same_audio(audio_fp_i, audio_fp_j, buffer_len: int = 10000000):
+    assert os.path.exists(audio_fp_i) and os.path.exists(audio_fp_j)
+    audio_info_i = sf.info(audio_fp_i)
+    audio_info_j = sf.info(audio_fp_j)
+    sr = audio_info_i.samplerate
+    if audio_info_j.samplerate != sr:
+        return False
+    ch = audio_info_i.channels
+    if audio_info_j.channels != ch:
+        return False
+    if abs(audio_info_i.duration - audio_info_j.duration) > 1 / sr:
+        return False
+    stream_kwargs = dict(block_length=1, frame_length=buffer_len, hop_length=buffer_len, mono=False)
+    stream_i = librosa.stream(audio_fp_i, **stream_kwargs)
+    stream_j = librosa.stream(audio_fp_j, **stream_kwargs)
+    for i, j in zip(stream_i, stream_j):
+        if not np.allclose(i, j):
+            return False
+    return True
+    
 
 def flac_with_eac3to(src_fn, dst_fn, shift):
     shift = 0 if shift is None else int(shift)
@@ -80,14 +98,13 @@ def demux_with_eac3to(fn, demux_fp, keeptrack):
             flac_fp = os.path.join(demux_fp, f'{tid}.flac')
             if len(to_merge_aud) == 0:
                 to_merge_aud.append(flac_fp)
-                last_aud = load_audio(flac_fp)
+                last_aud = flac_fp
             else:
-                this_aud = load_audio(flac_fp)
-                if last_aud.shape == this_aud.shape:
-                    if np.allclose(last_aud, this_aud):
-                        with open(flac_fp + '.dupe', 'wt') as dupefile:
-                            _ = dupefile.write('This file is the same as last track.')
-                        continue
+                this_aud = flac_fp
+                if same_audio(last_aud, this_aud):
+                    with open(flac_fp + '.dupe', 'wt') as dupefile:
+                        _ = dupefile.write('This file is the same as last track.')
+                    continue
                 to_merge_aud.append(flac_fp)
                 last_aud = this_aud
                 
@@ -164,14 +181,13 @@ def demux_with_tsmuxer(tar_fp, demux_fp, converter):
             flac_with_ffmpeg(track_fp, flac_fp, shift)
         if len(to_merge_aud) == 0:
             to_merge_aud.append(flac_fp)
-            last_aud = load_audio(flac_fp)
+            last_aud = flac_fp
         else:
-            this_aud = load_audio(flac_fp)
-            if last_aud.shape == this_aud.shape:
-                if np.allclose(last_aud, this_aud):
-                    with open(flac_fp + '.dupe', 'wt') as dupefile:
-                        _ = dupefile.write('This file is the same as last track.')
-                    continue
+            this_aud = flac_fp
+            if same_audio(last_aud, this_aud):
+                with open(flac_fp + '.dupe', 'wt') as dupefile:
+                    _ = dupefile.write('This file is the same as last track.')
+                continue
             to_merge_aud.append(flac_fp)
             last_aud = this_aud
     

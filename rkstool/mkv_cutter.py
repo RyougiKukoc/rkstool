@@ -58,7 +58,7 @@ def cut_mkv(
         if chapters < 0:
             chapters += num_chapters
         if chapters < 0 or chapters >= num_chapters:
-            print(f"Invalid chapter {chapter}")
+            print(f"Invalid chapter {chapters}")
             return
         chapter_str += str(chapters + 1)
         chapters = [chapters]

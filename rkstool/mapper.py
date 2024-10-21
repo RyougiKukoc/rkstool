@@ -26,9 +26,10 @@ def map_config(
         for ext in accept_ext:
             target_list += glob.glob(os.path.join(glob.escape(d), '*' + ext))
     for target_fp in target_list:
+        target_dir = os.path.dirname(target_fp)
         target_fn = os.path.basename(target_fp)
         name = os.path.splitext(target_fn)[0]
-        script_fn = os.path.join(dir_fp, name + config_ext)
+        script_fn = os.path.join(target_dir, name + config_ext)
         if os.path.exists(script_fn):
             if not replace:
                 continue

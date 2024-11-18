@@ -45,9 +45,13 @@ def flac_with_eac3to(src_fn, dst_fn, shift):
     _ = sp.run(flac_cmd)
 
 
-def flac_with_ffmpeg(src_fp, dst_fp, shift):
+def flac_with_ffmpeg(src_fp, dst_fp, shift, aid=0):
     shift = 0 if shift is None else int(shift)
-    flac_cmd = [g_ffmpeg_fp, '-i', src_fp, '-compression_level', '12']
+    if 'thd' in os.path.splitext(src_fp)[-1]:
+        src_aud_fp = src_fp
+        src_fp = src_aud_fp + '.mka'
+        _ = sp.run([g_mkvmerge_fp, '-o', src_fp, src_aud_fp])
+    flac_cmd = [g_ffmpeg_fp, '-i', src_fp, '-map', f'0:a:{aid}', '-compression_level', '12']
     if shift > 0:
         flac_cmd += ['-af', f'adelay={shift}']
     elif shift < 0:

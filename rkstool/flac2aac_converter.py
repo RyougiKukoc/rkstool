@@ -13,6 +13,7 @@ def flac_to_aac(
     fp: str,
     keep_flac_tracks: tuple = (0,),
     # TODO: convert_mode: str = 'qaac',
+    encode_params: tuple = ('-V', '127', '--no-delay'),
     trash_subdir: str = 'flac2aac_src'
 ):
     os.chdir(os.path.dirname(fp))
@@ -71,7 +72,7 @@ def flac_to_aac(
         if aid in keep_aids:
             merge_cmd.append(f'_tmp_{aid}.flac')
         else:
-            _ = sp.run([g_qaac_fp, '-o', f'_tmp_{aid}.aac', '-V', '127', '--no-delay', f'_tmp_{aid}.flac'])
+            _ = sp.run((g_qaac_fp, '-o', f'_tmp_{aid}.aac') + encode_params + (f'_tmp_{aid}.flac',))
             merge_cmd.append(f'_tmp_{aid}.aac')
     _ = sp.run(merge_cmd)
     for aid in aids:
@@ -87,6 +88,7 @@ def flac2aac(
     workspace_fp: str,
     keep_flac_tracks: tuple = (0,),
     # TODO: convert_mode: str = 'qaac',
+    encode_params: tuple = ('-V', '127', '--no-delay'),
     trash_subdir: str = 'flac2aac_src',
     mkvinfo_fp = None,
     mkvmerge_fp = None,
@@ -108,6 +110,7 @@ def flac2aac(
             flac_to_aac(
                 fp=os.path.join(dirpath, fn),
                 keep_flac_tracks=keep_flac_tracks,
+                encode_params=encode_params,
                 trash_subdir=trash_subdir,
             )
     g_mkvinfo_fp = 'mkvinfo'

@@ -33,6 +33,8 @@ def cut_mkv(
             else:
                 audio_count += 1
             extract_cmd += [f'{audio_count}:_a{audio_count}.flac']
+    if not audio_count:
+        extract_cmd = extract_cmd[:-1]
     _ = sp.run(extract_cmd)
 
     chapter_list = []

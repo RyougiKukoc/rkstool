@@ -297,7 +297,7 @@ def mux_bd(
     assert g_eac3to_fp or g_tsmuxer_fp, 'No demuxer survives.'
     assert g_eac3to_fp or g_ffmpeg_fp, 'No audio converter survives.'
     demuxer = 'tsmuxer' if g_tsmuxer_fp else 'eac3to'
-    converter = 'eac3to' if g_eac3to_fp else 'ffmpeg'
+    converter = 'ffmpeg' if g_ffmpeg_fp else 'eac3to'
     dfs(mux_path, keeptrack, vc_ext, demuxer, converter, recursion)
     g_eac3to_fp = 'eac3to'
     g_tsmuxer_fp = 'tsmuxer'

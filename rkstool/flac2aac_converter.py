@@ -97,10 +97,10 @@ def flac2aac(
 ):
     global g_mkvinfo_fp, g_mkvmerge_fp, g_mkvextract_fp, g_qaac_fp
     path_record = os.path.abspath('.')
-    g_mkvinfo_fp = shutil.which(mkvinfo_fp or g_mkvinfo_fp)
-    g_mkvmerge_fp = shutil.which(mkvmerge_fp or g_mkvmerge_fp)
-    g_mkvextract_fp = shutil.which(mkvextract_fp or g_mkvextract_fp)
-    g_qaac_fp = shutil.which(qaac_fp or g_qaac_fp)
+    g_mkvinfo_fp = os.path.abspath(shutil.which(mkvinfo_fp or g_mkvinfo_fp))
+    g_mkvmerge_fp = os.path.abspath(shutil.which(mkvmerge_fp or g_mkvmerge_fp))
+    g_mkvextract_fp = os.path.abspath(shutil.which(mkvextract_fp or g_mkvextract_fp))
+    g_qaac_fp = os.path.abspath(shutil.which(qaac_fp or g_qaac_fp))
     for dirpath, dirnames, filenames in os.walk(workspace_fp):
         if os.path.basename(dirpath) == trash_subdir:
             continue

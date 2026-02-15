@@ -92,8 +92,8 @@ def merge_mpls(
     mkvmerge_fp = None,
 ):
     global g_ffmpeg_fp, g_mkvmerge_fp
-    g_ffmpeg_fp = shutil.which(ffmpeg_fp or g_ffmpeg_fp)
-    g_mkvmerge_fp = shutil.which(mkvmerge_fp or g_mkvmerge_fp)
+    g_ffmpeg_fp = os.path.abspath(shutil.which(ffmpeg_fp or g_ffmpeg_fp))
+    g_mkvmerge_fp = os.path.abspath(shutil.which(mkvmerge_fp or g_mkvmerge_fp))
     mkv_dir = os.path.abspath(mkv_dir)
     mpls_dir = os.path.abspath(mpls_dir)
     output_dir = os.path.abspath(output_dir)

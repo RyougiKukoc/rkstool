@@ -13,7 +13,7 @@ def index(
     ffmpeg_fp: str = 'ffmpeg', 
 ):
     workspace_fp = os.path.abspath(workspace_fp)
-    ffmpeg_fp = shutil.which(ffmpeg_fp)
+    ffmpeg_fp = os.path.abspath(shutil.which(ffmpeg_fp))
     
     if os.path.exists(os.path.join(workspace_fp, 'BDMV', 'STREAM')):  # single volume optim
         bdid = 1

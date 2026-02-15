@@ -296,6 +296,16 @@ def mux_bd(
     g_mkvmerge_fp = shutil.which(mkvmerge_fp or g_mkvmerge_fp)
     assert g_eac3to_fp or g_tsmuxer_fp, 'No demuxer survives.'
     assert g_eac3to_fp or g_ffmpeg_fp, 'No audio converter survives.'
+    if g_eac3to_fp is not None:
+        g_eac3to_fp = os.path.abspath(g_eac3to_fp)
+    if g_tsmuxer_fp is not None:
+        g_tsmuxer_fp = os.path.abspath(g_tsmuxer_fp)
+    if g_ffmpeg_fp is not None:
+        g_ffmpeg_fp = os.path.abspath(g_ffmpeg_fp)
+    if g_ffprobe_fp is not None:
+        g_ffprobe_fp = os.path.abspath(g_ffprobe_fp)
+    if g_mkvmerge_fp is not None:
+        g_mkvmerge_fp = os.path.abspath(g_mkvmerge_fp)
     demuxer = 'tsmuxer' if g_tsmuxer_fp else 'eac3to'
     converter = 'ffmpeg' if g_ffmpeg_fp else 'eac3to'
     dfs(mux_path, keeptrack, vc_ext, demuxer, converter, recursion)

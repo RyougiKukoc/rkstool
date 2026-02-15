@@ -12,9 +12,9 @@ def cut_mkv(
     mkvmerge_fp: str = 'mkvmerge',
     mkvextract_fp: str = 'mkvextract'
 ):
-    ffmpeg_fp = shutil.which(ffmpeg_fp)
-    mkvmerge_fp = shutil.which(mkvmerge_fp)
-    mkvextract_fp = shutil.which(mkvextract_fp)
+    ffmpeg_fp = os.path.abspath(shutil.which(ffmpeg_fp))
+    mkvmerge_fp = os.path.abspath(shutil.which(mkvmerge_fp))
+    mkvextract_fp = os.path.abspath(shutil.which(mkvextract_fp))
     src_fp = os.path.abspath(src_fp)
     tar_dir = os.path.dirname(src_fp) if tar_dir is None else os.path.abspath(tar_dir)
     os.makedirs(tar_dir, exist_ok=True)

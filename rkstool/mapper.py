@@ -35,7 +35,7 @@ def map_config(
                 continue
             else:
                 os.remove(script_fn)  # for safety
-        with open(script_fn, 'w') as sf:
+        with open(script_fn, 'w', encoding='UTF-8') as sf:
             for line in lines:
                 sf.write(line.replace('$src', target_fn).replace('$bas', name))
                 

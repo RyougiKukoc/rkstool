@@ -76,13 +76,13 @@ def dfs(
                 logger.warning('Number of frames cannot match!')
                 logger.info(f'{tar_fp}: {ori_frames}')
                 logger.info(f'{vc_fp}: {rip_frames}')
-                with open(break_fp, 'w') as breakf:
+                with open(break_fp, 'w', encoding='UTF-8') as breakf:
                     breakf.write(f'{tar_fp}: {ori_frames}\n{vc_fp}: {rip_frames}')
         elif abs(ori_duration - rip_duration) > 1:
             logger.warning('Number of frames may not match!')
             logger.info(f'{tar_fp}: {ori_duration:.6f}s')
             logger.info(f'{vc_fp}: {rip_duration:.6f}s')
-            with open(break_fp, 'w') as breakf:
+            with open(break_fp, 'w', encoding='UTF-8') as breakf:
                 breakf.write(f'{tar_fp}: {ori_frames}\n{vc_fp}: {rip_frames}')
         else:
             if os.path.exists(break_fp):

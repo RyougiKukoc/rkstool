@@ -46,7 +46,7 @@ def dfs(
                 pass  # overwrite this vc
             else:
                 continue
-        with open(busy_fp, 'w') as busyf:
+        with open(busy_fp, 'w', encoding='UTF-8') as busyf:
             busyf.write(f'{vc_fp} is being encoded.')
         rec_env = os.environ['PATH']
         try:

@@ -106,7 +106,7 @@ def demux_with_eac3to(fn, demux_fp, keeptrack):
             else:
                 this_aud = flac_fp
                 if same_audio(last_aud, this_aud):
-                    with open(flac_fp + '.dupe', 'wt') as dupefile:
+                    with open(flac_fp + '.dupe', 'wt', encoding='UTF-8') as dupefile:
                         _ = dupefile.write('This file is the same as last track.')
                     continue
                 to_merge_aud.append(flac_fp)
@@ -154,7 +154,7 @@ def demux_with_tsmuxer(tar_fp, demux_fp, converter):
                 tidshift.append(timeshift)
                 track_meta = None
                 timeshift = None
-    with open(meta_fp, 'wt') as metafile:
+    with open(meta_fp, 'wt', encoding='UTF-8') as metafile:
         _ = metafile.write(os.linesep.join(meta))
     
     # run demuxer
@@ -189,7 +189,7 @@ def demux_with_tsmuxer(tar_fp, demux_fp, converter):
         else:
             this_aud = flac_fp
             if same_audio(last_aud, this_aud):
-                with open(flac_fp + '.dupe', 'wt') as dupefile:
+                with open(flac_fp + '.dupe', 'wt', encoding='UTF-8') as dupefile:
                     _ = dupefile.write('This file is the same as last track.')
                 continue
             to_merge_aud.append(flac_fp)

@@ -1,8 +1,6 @@
 import os
 import glob
 import shutil
-import librosa
-import soundfile as sf
 import subprocess as sp
 import numpy as np
 from .qpfile_chapter import GCFQP
@@ -16,7 +14,26 @@ g_ffprobe_fp = 'ffprobe'
 g_mkvmerge_fp = 'mkvmerge'
 
 
-def same_audio(audio_fp_i, audio_fp_j, buffer_len: int = 10000000):
+def same_audio(audio_fp_i, audio_fp_j):
+    from vapoursynth import core 
+    assert os.path.exists(audio_fp_i) and os.path.exists(audio_fp_j)
+    ai = core.bs.AudioSource(audio_fp_i)
+    aj = core.bs.AudioSource(audio_fp_j)
+    if ai.sample_rate != aj.sample_rate:
+        return False
+    if ai.num_samples != aj.num_samples:
+        return False
+    if ai.num_channels != aj.num_channels:
+        return False
+    for i, j in zip(ai.frames(), aj.frames()):
+        if not np.allclose(np.asarray(i), np.asarray(j)):
+            return False
+    return True
+
+
+def _legacy_same_audio(audio_fp_i, audio_fp_j, buffer_len: int = 10000000):
+    import librosa
+    import soundfile as sf
     assert os.path.exists(audio_fp_i) and os.path.exists(audio_fp_j)
     audio_info_i = sf.info(audio_fp_i)
     audio_info_j = sf.info(audio_fp_j)

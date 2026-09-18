@@ -7,12 +7,13 @@ g_mkvinfo_fp = 'mkvinfo'
 g_mkvmerge_fp = 'mkvmerge'
 g_mkvextract_fp = 'mkvextract'
 g_qaac_fp = 'qaac'
+g_ffmpeg_fp = 'ffmpeg'
 
 
 def flac_to_aac(
     fp: str,
     keep_flac_tracks: tuple = (0,),
-    # TODO: convert_mode: str = 'qaac',
+    convert_mode: str = 'qaac',
     encode_params: tuple = ('-V', '127', '--no-delay'),
     trash_subdir: str = 'flac2aac_src'
 ):
@@ -72,13 +73,16 @@ def flac_to_aac(
         if aid in keep_aids:
             merge_cmd.append(f'_tmp_{aid}.flac')
         else:
-            _ = sp.run([g_qaac_fp, '-o', f'_tmp_{aid}.aac'] + list(encode_params) + [f'_tmp_{aid}.flac'])
-            merge_cmd.append(f'_tmp_{aid}.aac')
+            if convert_mode == 'qaac':
+                _ = sp.run([g_qaac_fp, '-o', f'_tmp_{aid}.m4a'] + list(encode_params) + [f'_tmp_{aid}.flac'])
+            else:
+                _ = sp.run([g_ffmpeg_fp, '-i', f'_tmp_{aid}.flac'] + list(encode_params) + [f'_tmp_{aid}.m4a'])
+            merge_cmd.append(f'_tmp_{aid}.m4a')
     _ = sp.run(merge_cmd)
     for aid in aids:
         os.remove(f'_tmp_{aid}.flac')
         if aid not in keep_aids:
-            os.remove(f'_tmp_{aid}.aac')
+            os.remove(f'_tmp_{aid}.m4a')
     trash_subdir_fp = os.path.join(os.path.dirname(fp), trash_subdir)
     os.makedirs(trash_subdir_fp, exist_ok=True)
     shutil.move(fp, os.path.join(trash_subdir_fp, os.path.basename(fp)))
@@ -87,20 +91,31 @@ def flac_to_aac(
 def flac2aac(
     workspace_fp: str,
     keep_flac_tracks: tuple = (0,),
-    # TODO: convert_mode: str = 'qaac',
-    encode_params: tuple = ('-V', '127', '--no-delay'),
+    convert_mode: str = 'qaac',
+    encode_params: tuple | None = None,
     trash_subdir: str = 'flac2aac_src',
     mkvinfo_fp = None,
     mkvmerge_fp = None,
     mkvextract_fp = None,
     qaac_fp = None,
+    ffmpeg_fp = None,
 ):
-    global g_mkvinfo_fp, g_mkvmerge_fp, g_mkvextract_fp, g_qaac_fp
+    assert convert_mode in ('qaac', 'fdk')
+    global g_mkvinfo_fp, g_mkvmerge_fp, g_mkvextract_fp
     path_record = os.path.abspath('.')
     g_mkvinfo_fp = os.path.abspath(shutil.which(mkvinfo_fp or g_mkvinfo_fp))
     g_mkvmerge_fp = os.path.abspath(shutil.which(mkvmerge_fp or g_mkvmerge_fp))
     g_mkvextract_fp = os.path.abspath(shutil.which(mkvextract_fp or g_mkvextract_fp))
-    g_qaac_fp = os.path.abspath(shutil.which(qaac_fp or g_qaac_fp))
+    if convert_mode == 'qaac':
+        global g_qaac_fp
+        g_qaac_fp = os.path.abspath(shutil.which(qaac_fp or g_qaac_fp))
+        if encode_params is None:
+            encode_params = ('-V', '127', '--no-delay')
+    else:
+        global g_ffmpeg_fp
+        g_ffmpeg_fp = os.path.abspath(shutil.which(ffmpeg_fp or g_ffmpeg_fp))
+        if encode_params is None:
+            encode_params = ('-c:a', 'libfdk_aac', '-vbr', '5', '-cutoff', '20000', '-y')
     for dirpath, dirnames, filenames in os.walk(workspace_fp):
         if os.path.basename(dirpath) == trash_subdir:
             continue
@@ -117,5 +132,6 @@ def flac2aac(
     g_mkvmerge_fp = 'mkvmerge'
     g_mkvextract_fp = 'mkvextract'
     g_qaac_fp = 'qaac'
+    g_ffmpeg_fp = 'ffmpeg'
     os.chdir(path_record)
     

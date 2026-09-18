@@ -294,7 +294,7 @@ def dfs(mux_path, keeptrack, vc_ext, demuxer, converter, recursion):
 
 
 def mux_bd(
-    mux_path: str,
+    mux_path: str = '.',
     keeptrack: bool = False,  # whether to keep the demux audio & sub tracks
     vc_ext: str = '.hevc',
     recursion: bool = True, 

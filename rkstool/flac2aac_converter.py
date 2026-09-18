@@ -11,7 +11,7 @@ g_ffmpeg_fp = 'ffmpeg'
 
 
 def flac_to_aac(
-    fp: str,
+    fp: str = '.',
     keep_flac_tracks: tuple = (0,),
     convert_mode: str = 'qaac',
     encode_params: tuple = ('-V', '127', '--no-delay'),
@@ -125,6 +125,7 @@ def flac2aac(
             flac_to_aac(
                 fp=os.path.join(dirpath, fn),
                 keep_flac_tracks=keep_flac_tracks,
+                convert_mode=convert_mode,
                 encode_params=encode_params,
                 trash_subdir=trash_subdir,
             )

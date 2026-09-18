@@ -3,7 +3,7 @@ import shutil
 
 
 def make_qpfile(
-    dir: str, 
+    dir: str = '.', 
     qp_ext: str = '.24.qpfile', 
     force: bool = False,  # whether to cover existed '*.qpfile'
 ):

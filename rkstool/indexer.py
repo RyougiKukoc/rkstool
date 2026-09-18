@@ -7,7 +7,7 @@ from .logger import get_logger
 
 
 def index(
-    workspace_fp: str, 
+    workspace_fp: str = '.', 
     qponly: bool = False,
     logger_fp: str = None, 
     ffmpeg_fp: str = 'ffmpeg', 

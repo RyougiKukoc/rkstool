@@ -91,7 +91,7 @@ def dfs(
         
 
 def rip(
-    rip_path: str,
+    rip_path: str = '.',
     recursion: bool = True, 
     vc_ext: str = '.hevc',
     run_ext: str = '.py', 

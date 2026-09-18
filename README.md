@@ -5,7 +5,7 @@
 
 # Installation
 ```
-pip install git+https://github.com/RyougiKukoc/rkstool.git
+pip install --force-reinstall git+https://github.com/RyougiKukoc/rkstool.git
 ```
 
 # Documents

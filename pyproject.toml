@@ -4,5 +4,15 @@ build-backend = "hatchling.build"
 
 [project]
 name = "rkstool"
-version = "1.1.0"
+version = "1.1.1"
+readme = "README.md"
 dependencies = []
+
+[project.urls]
+Source = "https://github.com/RyougiKukoc/rkstool"
+
+[tool.hatch.build.targets.wheel]
+packages = ["rkstool"]
+
+[tool.hatch.build.targets.sdist]
+include = ["/rkstool", "/pyproject.toml", "/README.md"]

@@ -1,0 +1,23 @@
+name: Sync wheel preview
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_ref:
+        description: Source branch, tag or full commit to preview
+        default: main
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  request:
+    uses: AliceTeaParty/vapoursynth-api4-wheels/.github/workflows/submit-module-update.yml@1c4fef00b8fcbf372157fddc96fbfe1ee9c627ed
+    with:
+      module: rkstool
+      source_ref: ${{ inputs.source_ref }}
+      tools_ref: 1c4fef00b8fcbf372157fddc96fbfe1ee9c627ed
+    secrets:
+      update-token: ${{ secrets.WHEELS_UPDATE_TOKEN }}

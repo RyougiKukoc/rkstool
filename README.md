@@ -4,6 +4,8 @@
 **Special Thanks to Jan, x_x.**
 
 # Installation
+
+Requires Python 3.10 or newer.
 ```
 pip install --force-reinstall git+https://github.com/RyougiKukoc/rkstool.git
 ```

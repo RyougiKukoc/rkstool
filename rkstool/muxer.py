@@ -15,20 +15,28 @@ g_mkvmerge_fp = 'mkvmerge'
 
 
 def same_audio(audio_fp_i, audio_fp_j):
-    from vapoursynth import core 
+    from vapoursynth import core
     assert os.path.exists(audio_fp_i) and os.path.exists(audio_fp_j)
-    ai = core.bs.AudioSource(audio_fp_i)
-    aj = core.bs.AudioSource(audio_fp_j)
-    if ai.sample_rate != aj.sample_rate:
-        return False
-    if ai.num_samples != aj.num_samples:
-        return False
-    if ai.num_channels != aj.num_channels:
-        return False
-    for i, j in zip(ai.frames(), aj.frames()):
-        if not np.allclose(np.asarray(i), np.asarray(j)):
+    ai = aj = None
+    try:
+        ai = core.bs.AudioSource(audio_fp_i)
+        aj = core.bs.AudioSource(audio_fp_j)
+        if ai.sample_rate != aj.sample_rate:
             return False
-    return True
+        if ai.num_samples != aj.num_samples:
+            return False
+        if ai.num_channels != aj.num_channels:
+            return False
+        # Avoid frames()'s async prefetch cycles retaining BestSource handles
+        # after an early return, which prevents demux cleanup on Windows.
+        for n in range(ai.num_frames):
+            with ai.get_frame(n) as frame_i, aj.get_frame(n) as frame_j:
+                if not np.allclose(np.asarray(frame_i), np.asarray(frame_j)):
+                    return False
+        return True
+    finally:
+        # Release both sources even if opening or decoding the second fails.
+        ai = aj = None
 
 
 def _legacy_same_audio(audio_fp_i, audio_fp_j, buffer_len: int = 10000000):

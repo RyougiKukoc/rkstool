@@ -8,7 +8,7 @@ from .qpfile_chapter import GCFQP
 
 encdict = {'.hevc': 'x265', '.264': 'x264', '.avc': 'x264'}
 g_eac3to_fp = 'eac3to'
-g_tsmuxer_fp = 'tsmuxer'
+g_tsmuxer_fp = 'tsMuxeR'
 g_ffmpeg_fp = 'ffmpeg'
 g_ffprobe_fp = 'ffprobe'
 g_mkvmerge_fp = 'mkvmerge'
